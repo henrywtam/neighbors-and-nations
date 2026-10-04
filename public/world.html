@@ -21,12 +21,14 @@
       <!-- Map panel (75%) -->
       <div id="map-panel">
         <div id="map-header">
-          <div id="map-title">🗺️ RealitySF Global Discovery: Our Connected World</div>
-          <div id="map-subtitle">💓 The Global Heartbeat &mdash; Our Congregation at RealitySF</div>
+          <div id="map-title">RealitySF Global Discovery: Our Connected World</div>
+          <div id="map-subtitle">The Global Heartbeat &mdash; Our Congregation at RealitySF</div>
           <div id="people-counter">
             <span class="count-number" id="people-count">0</span>
-            <span> 👥 people have shared their heart</span>
+            <span> people have shared their heart</span>
           </div>
+        </div>
+        <div id="map-svg-wrap">
           <div id="live-indicator">
             <div id="live-dot"></div>
             <div class="live-info">
@@ -34,8 +36,6 @@
               <span id="last-pulled" class="last-pulled"></span>
             </div>
           </div>
-        </div>
-        <div id="map-svg-wrap">
           <div class="ocean-lb" id="olb-countries" data-lb-type="countries"></div>
           <div class="ocean-lb" id="olb-cities" data-lb-type="cities"></div>
           <div class="ocean-lb" id="olb-regions" data-lb-type="regions"></div>
@@ -46,7 +46,7 @@
       <!-- Leaderboard panel (25%) -->
       <div id="leaderboard-panel">
         <div id="leaderboard-header">
-          <div id="leaderboard-title">⛪ Our Congregation</div>
+          <div id="leaderboard-title">Our Congregation</div>
           <div id="leaderboard-total">
             <span class="lb-total-num" id="lb-total-num">0</span> people have shared
           </div>
@@ -75,6 +75,9 @@
         <div id="sf-header">
           <div id="sf-title">🌉 San Francisco</div>
           <div id="sf-subtitle">🏠 Where Our People Live</div>
+          <div id="sf-overlay-controls">
+            <button id="sf-partners-toggle" class="sf-overlay-btn">📍 Partners</button>
+          </div>
           <div id="sf-live-indicator">
             <div id="sf-live-dot"></div>
             <div class="live-info">
@@ -85,6 +88,7 @@
         </div>
         <div id="sf-map-wrap">
           <!-- SF map SVG injected by world.js -->
+          <div id="sf-partner-tooltip"></div>
         </div>
         <div id="sf-attribution">Neighborhood boundaries: SF Planning Dept &mdash; <a href="https://data.sf.gov/Geographic-Locations-and-Boundaries/Analysis-Neighborhoods/p5b7-5n3h" target="_blank" rel="noopener">DataSF Analysis Neighborhoods</a></div>
       </div>
@@ -92,7 +96,7 @@
       <!-- SF sidebar (25%) -->
       <div id="sf-sidebar">
         <div id="sf-lb-header">
-          <div id="sf-lb-title">📍 Neighborhoods</div>
+          <div id="sf-lb-title">Neighborhoods</div>
           <div id="sf-lb-total">
             <span class="lb-total-num" id="sf-lb-num">0</span> SF residents
           </div>

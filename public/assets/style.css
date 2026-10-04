@@ -91,8 +91,9 @@ html, body {
 
 #live-indicator {
   position: absolute;
-  top: 16px;
+  bottom: 16px;
   right: 16px;
+  z-index: 6;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -197,17 +198,14 @@ html, body {
 }
 
 .city-dot {
-  fill: rgba(255, 180, 60, 0.85);
-  stroke: rgba(255, 255, 255, 0.3);
-  stroke-width: 0.5;
+  fill: rgba(255, 255, 255, 0.95);
+  stroke: rgba(10, 20, 40, 0.8);
+  stroke-width: 1;
   cursor: default;
 }
 
 .region-outline {
-  fill: none;
-  stroke: var(--teal);
-  stroke-dasharray: 6, 3;
-  transition: stroke 1s ease, stroke-width 1s ease;
+  pointer-events: none;
 }
 
 .region-label-text {
@@ -800,4 +798,129 @@ body {
   fill: var(--amber);
   font-size: 11px;
   font-weight: 700;
+}
+
+/* ============================================================
+   SF overlay controls (partner toggle)
+   ============================================================ */
+
+#sf-overlay-controls {
+  margin-top: 8px;
+}
+
+.sf-overlay-btn {
+  background: rgba(0, 229, 200, 0.08);
+  border: 1px solid rgba(0, 229, 200, 0.3);
+  color: rgba(0, 229, 200, 0.5);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.sf-overlay-btn.active {
+  background: rgba(0, 229, 200, 0.15);
+  border-color: var(--teal);
+  color: var(--teal);
+  box-shadow: 0 0 8px rgba(0, 229, 200, 0.25);
+}
+
+.sf-overlay-btn:hover {
+  background: rgba(0, 229, 200, 0.2);
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+/* ============================================================
+   SF partner markers
+   ============================================================ */
+
+.sf-partner-ring {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 1.2;
+  opacity: 0.45;
+  transition: opacity 0.2s, r 0.2s;
+}
+
+.sf-partner-dot {
+  fill: var(--teal);
+  opacity: 0.85;
+  transition: opacity 0.2s, r 0.2s;
+}
+
+.sf-partner-cross {
+  stroke: var(--navy);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.sf-partner-hit {
+  cursor: pointer;
+}
+
+/* Hover state */
+.sf-partner-g--hover .sf-partner-ring {
+  opacity: 1;
+  r: 9;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 200, 0.7));
+}
+
+.sf-partner-g--hover .sf-partner-dot {
+  opacity: 1;
+  fill: #ffffff;
+}
+
+/* ============================================================
+   SF partner tooltip
+   ============================================================ */
+
+#sf-partner-tooltip {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  z-index: 20;
+  background: rgba(13, 31, 60, 0.95);
+  border: 1px solid rgba(0, 229, 200, 0.5);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 229, 200, 0.15);
+  max-width: 220px;
+}
+
+#sf-partner-tooltip.visible {
+  display: block;
+}
+
+.spt-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spt-branch {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spt-addr {
+  font-size: 11px;
+  color: var(--white-dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

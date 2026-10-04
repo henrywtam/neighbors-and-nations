@@ -109,6 +109,68 @@ const COUNTRY_NAME_TO_ISO_NUM = {
   'Vietnam': '704',
   'Zambia': '894',
   'Zimbabwe': '716',
+  'Taiwan': '158',
+  // Middle East
+  'Yemen': '887',
+  'Oman': '512',
+  'Kuwait': '414',
+  'Qatar': '634',
+  // Europe
+  'Slovakia': '703',
+  'Slovenia': '705',
+  'Montenegro': '499',
+  'Moldova': '498',
+  'Latvia': '428',
+  'Lithuania': '440',
+  'Luxembourg': '442',
+  'Malta': '470',
+  'North Macedonia': '807',
+  'Albania': '008',
+  'Estonia': '233',
+  'Bosnia and Herzegovina': '070',
+  // Africa
+  'Namibia': '516',
+  'Malawi': '454',
+  'Liberia': '430',
+  'Sierra Leone': '694',
+  'Togo': '768',
+  'Somalia': '706',
+  'Mauritius': '480',
+  'Mauritania': '478',
+  'eSwatini': '748',
+  'Lesotho': '426',
+  'Benin': '204',
+  'Gambia': '270',
+  'Guinea': '324',
+  'Guinea-Bissau': '624',
+  'Equatorial Guinea': '226',
+  'Gabon': '266',
+  'Central African Republic': '140',
+  'Eritrea': '232',
+  'Djibouti': '262',
+  // Latin America
+  'Paraguay': '600',
+  'Uruguay': '858',
+  'Trinidad and Tobago': '780',
+  'Belize': '084',
+  'Guyana': '328',
+  'Suriname': '740',
+  // Central Asia
+  'Mongolia': '496',
+  'Kazakhstan': '398',
+  'Uzbekistan': '860',
+  'Kyrgyzstan': '417',
+  'Tajikistan': '762',
+  'Turkmenistan': '795',
+  // Asia-Pacific
+  'Papua New Guinea': '598',
+  'Timor-Leste': '626',
+  'Fiji': '242',
+  'Solomon Islands': '090',
+  'Vanuatu': '548',
+  'Samoa': '882',
+  'Tonga': '776',
+  'North Korea': '408',
 };
 
 // Reverse: ISO numeric string → country name
@@ -123,7 +185,7 @@ const ISO_NUM_TO_COUNTRY_NAME = Object.fromEntries(
 // ---------------------------------------------------------------------------
 const OCEAN_LB_POSITIONS = {
   'olb-cities':    [-110, -12],  // South Pacific (left)
-  'olb-countries': [-10, -12],   // South Atlantic (centre)
+  'olb-countries': [-10, -42],   // South Atlantic (centre)
   'olb-regions':   [82, -12],    // Indian Ocean (right)
 };
 
@@ -145,6 +207,46 @@ const SF_LABEL_OFFSETS = {
 
 // Parks and non-residential areas: show name label but hide the count.
 const SF_NO_COUNT = new Set(['Golden Gate Park', 'McLaren Park', 'Presidio', 'Lincoln Park']);
+
+// ---------------------------------------------------------------------------
+// SF local partner organizations
+// ---------------------------------------------------------------------------
+let sfPartnersVisible = false;
+
+const SF_PARTNERS = [
+  { name: 'Reality SF',                     address: 'Valencia St & 24th St',          lat: 37.7529, lng: -122.4194 },
+  { name: 'BJM',                            address: '357 Ellis St (YWAM SF Building)', lat: 37.7833, lng: -122.4138 },
+  { name: 'YWAM SF',                        address: '357 Ellis St',                    lat: 37.7831, lng: -122.4133 },
+  { name: 'Buena Vista Horace Mann School', branch: 'Current Campus',        address: '325 La Grande Ave',           lat: 37.7186, lng: -122.4442 },
+  { name: 'Buena Vista Horace Mann School', branch: 'Permanent Campus',      address: '3351 23rd St',                lat: 37.7515, lng: -122.4343 },
+  { name: 'Rise University Preparatory',    address: '1224 Fairfax Ave',                lat: 37.7263, lng: -122.4550 },
+  { name: 'SF-Marin Food Bank',              branch: 'SF Branch',             address: '900 Pennsylvania Ave',            lat: 37.7527, lng: -122.3945 },
+  { name: 'SF-Marin Food Bank',              branch: 'Marin Branch',          address: '2550 Kerner Blvd, San Rafael',    lat: 37.9703, lng: -122.5292 },
+  { name: 'Foster the City',                address: '1504 Bryant St',                  lat: 37.7697, lng: -122.4105 },
+  { name: 'Jamestown Community Center',     address: '2929 19th St',                    lat: 37.7617, lng: -122.4135 },
+  { name: 'Donum Dei Classical Academy',    address: '1560 Treat Ave',                  lat: 37.7565, lng: -122.4113 },
+  { name: 'Dolores Street Community Services', address: '938 Valencia St',              lat: 37.7592, lng: -122.4214 },
+  { name: 'Dolores Shelter Program',        address: '1050 South Van Ness Ave',         lat: 37.7565, lng: -122.4191 },
+  { name: 'Richard Cohen Residence',        address: '220 Dolores St',                  lat: 37.7678, lng: -122.4256 },
+  { name: 'SF Adult & Teen Challenge',      address: '1464 Valencia St',                lat: 37.7497, lng: -122.4204 },
+  { name: 'Everett Middle School',          address: '450 Church St',                   lat: 37.7643, lng: -122.4290 },
+  { name: 'Sanchez Elementary School',      address: '325 Sanchez St',                  lat: 37.7641, lng: -122.4310 },
+  { name: 'John O\'Connell High School',    address: '2355 Folsom St',                  lat: 37.7541, lng: -122.4125 },
+  { name: 'Mission Graduates',              address: '3040 16th St',                    lat: 37.7648, lng: -122.4205 },
+  { name: 'New Door Ventures',              branch: 'New Door – SF',         address: '3221 20th St',                lat: 37.7588, lng: -122.4226 },
+  { name: 'New Door Ventures',              branch: 'New Door – Oakland',    address: '1629 Telegraph Ave, Ste 200', lat: 37.8099, lng: -122.2654 },
+  { name: 'Old Skool Cafe',                 address: '1429 Mendell St',                 lat: 37.7355, lng: -122.3878 },
+  { name: 'Sunset Youth Services',          branch: 'Main Office',           address: '3918 Judah St',               lat: 37.7611, lng: -122.5009 },
+  { name: 'Sunset Youth Services',          branch: 'Family Support Center', address: 'Moraga St & 38th Ave',        lat: 37.7592, lng: -122.4985 },
+  { name: 'Mobilize Love',                                                   address: 'Bernal Heights',              lat: 37.7360, lng: -122.4147 },
+  { name: 'City Hope',                      address: '45 Olive St',                     lat: 37.7857, lng: -122.4176 },
+  { name: 'City Impact',                    address: '230 Jones St',                    lat: 37.7836, lng: -122.4122 },
+  { name: 'Open Door Legal',                branch: 'Bayview Branch',        address: '4634 3rd St',                 lat: 37.7257, lng: -122.3902 },
+  { name: 'Open Door Legal',                branch: 'Excelsior Branch',      address: '60 Ocean Ave',                lat: 37.7237, lng: -122.4449 },
+  { name: 'Open Door Legal',                branch: 'Western Addition Branch', address: '1113 Fillmore St',          lat: 37.7818, lng: -122.4327 },
+  { name: 'Open Door Legal',                branch: 'Sunset Branch',         address: '1722 Irving St',              lat: 37.7638, lng: -122.4728 },
+  { name: 'Alpha Pregnancy Center',         address: '5070 Mission St',                 lat: 37.7188, lng: -122.4407 },
+];
 
 // ---------------------------------------------------------------------------
 // Config mirroring server config.js regionLabelPositions
@@ -305,6 +407,7 @@ function initMap() {
   const feMerge = filter.append('feMerge');
   feMerge.append('feMergeNode').attr('in', 'blur');
   feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
 
   projection = d3.geoNaturalEarth1()
     .fitSize([svgWidth, svgHeight], { type: 'Sphere' });
@@ -510,56 +613,8 @@ function renderRegions(state, prevState) {
   const regionNames = Object.keys(regionCountries);
   const maxRegionCount = Math.max(1, ...Object.values(regionPicks).map(v => Number(v) || 0));
 
-  // Build a lookup: ISO numeric id → whether it belongs to a region's country list
-  // For each region, find matching feature IDs
-  const regionFeatureGroups = {};
-  for (const [regionName, countries] of Object.entries(regionCountries)) {
-    const ids = new Set(countries.map(c => COUNTRY_NAME_TO_ISO_NUM[c]).filter(Boolean));
-    regionFeatureGroups[regionName] = countryFeatures.filter(f => ids.has(String(f.id)));
-  }
-
-  const g = svg.select('g.regions');
-  const gl = svg.select('g.region-labels');
-
-  // Remove old
-  g.selectAll('*').remove();
-  gl.selectAll('*').remove();
-
-  for (const regionName of regionNames) {
-    const features = regionFeatureGroups[regionName] || [];
-    if (features.length === 0) continue;
-
-    const count = Number(regionPicks[regionName]) || 0;
-    const prevCount = prevState ? (Number((prevState.regionPicks || {})[regionName]) || 0) : 0;
-
-    const strokeWidth = 1.5 + 3 * Math.sqrt(count / maxRegionCount);
-    const strokeColor = (prevState && count > prevCount) ? '#ffffff' : '#00e5c8';
-
-    // Merge country geometries for this region
-    let mergedPath;
-    try {
-      const merged = topojson.merge(topoData, features);
-      mergedPath = pathGen(merged);
-    } catch (e) {
-      continue;
-    }
-
-    const path = g.append('path')
-      .attr('class', 'region-outline')
-      .attr('d', mergedPath)
-      .attr('stroke', strokeColor)
-      .attr('stroke-width', strokeWidth);
-
-    // Animate back to teal if we just changed
-    if (prevState && count > prevCount) {
-      path.transition().duration(1000).attr('stroke', '#00e5c8');
-    }
-
-    // Region label
-    if (count > 0) {
-      renderRegionLabel(gl, regionName, count);
-    }
-  }
+  svg.select('g.regions').selectAll('*').remove();
+  svg.select('g.region-labels').selectAll('*').remove();
 }
 
 function renderRegionLabel(g, regionName, count) {
@@ -837,7 +892,7 @@ function renderOceanLeaderboards(state) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
     cEl.style.display = items.length === 0 ? 'none' : '';
-    cEl.innerHTML = renderOceanCard('Countries', items);
+    cEl.innerHTML = renderOceanCard('Top Countries', items);
   }
 
   // Cities
@@ -849,7 +904,7 @@ function renderOceanLeaderboards(state) {
       .slice(0, 5)
       .map(c => ({ name: c.name, count: c.count }));
     ciEl.style.display = items.length === 0 ? 'none' : '';
-    ciEl.innerHTML = renderOceanCard('Cities', items);
+    ciEl.innerHTML = renderOceanCard('Top Cities', items);
   }
 
   // Regions
@@ -861,7 +916,7 @@ function renderOceanLeaderboards(state) {
       ...(sfBayCount > 0 ? [{ name: 'SF / Bay Area', count: sfBayCount }] : []),
     ].sort((a, b) => b.count - a.count).slice(0, 5);
     rEl.style.display = items.length === 0 ? 'none' : '';
-    rEl.innerHTML = renderOceanCard('Regions', items);
+    rEl.innerHTML = renderOceanCard('Top Regions', items);
   }
 }
 
@@ -878,7 +933,17 @@ function renderOceanCard(title, items) {
 // ---------------------------------------------------------------------------
 // App tab switching
 // ---------------------------------------------------------------------------
+function toggleSfPartners() {
+  sfPartnersVisible = !sfPartnersVisible;
+  const btn = document.getElementById('sf-partners-toggle');
+  if (btn) btn.classList.toggle('active', sfPartnersVisible);
+  if (currentState && sfSvg) renderSfMap(currentState);
+}
+
 function setupAppTabs() {
+  const partnersBtn = document.getElementById('sf-partners-toggle');
+  if (partnersBtn) partnersBtn.addEventListener('click', toggleSfPartners);
+
   document.querySelectorAll('.app-tab').forEach(btn => {
     btn.addEventListener('click', async () => {
       const view = btn.dataset.view;
@@ -1010,6 +1075,70 @@ function renderSfMap(state) {
   }
 
   renderSfSidebar(state);
+  renderSfPartners(g);
+}
+
+function positionSfTooltip(tooltip, event, wrapRect) {
+  const x = event.clientX - wrapRect.left;
+  const y = event.clientY - wrapRect.top;
+  const ttW = 220;
+  const ttH = 68;
+  const margin = 14;
+  let left = x + margin;
+  let top = y - ttH / 2;
+  if (left + ttW > wrapRect.width - 8) left = x - ttW - margin;
+  top = Math.max(4, Math.min(top, wrapRect.height - ttH - 4));
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function renderSfPartners(g) {
+  if (!g || g.empty() || !sfProjection) return;
+
+  const tooltip = document.getElementById('sf-partner-tooltip');
+  if (!tooltip) return;
+
+  if (!sfPartnersVisible) return;
+
+  for (const partner of SF_PARTNERS) {
+    const pt = sfProjection([partner.lng, partner.lat]);
+    if (!pt) continue;
+    const [cx, cy] = pt;
+
+    const pg = g.append('g')
+      .attr('class', 'sf-partner-g')
+      .attr('data-cx', cx)
+      .attr('data-cy', cy)
+      .attr('transform', `translate(${cx},${cy})`);
+
+    // Glow ring
+    pg.append('circle').attr('class', 'sf-partner-ring').attr('r', 7);
+    // Filled dot
+    pg.append('circle').attr('class', 'sf-partner-dot').attr('r', 4);
+    // Plus icon
+    pg.append('line').attr('class', 'sf-partner-cross').attr('x1', 0).attr('y1', -2.2).attr('x2', 0).attr('y2', 2.2);
+    pg.append('line').attr('class', 'sf-partner-cross').attr('x1', -2.2).attr('y1', 0).attr('x2', 2.2).attr('y2', 0);
+
+    // Invisible enlarged hit target
+    pg.append('circle')
+      .attr('r', 10)
+      .attr('fill', 'transparent')
+      .attr('class', 'sf-partner-hit')
+      .on('mouseenter', function(event) {
+        const wrap = document.getElementById('sf-map-wrap');
+        tooltip.innerHTML = `<div class="spt-name">${escHtml(partner.name)}</div>${partner.branch ? `<div class="spt-branch">${escHtml(partner.branch)}</div>` : ''}<div class="spt-addr">${escHtml(partner.address)}</div>`;
+        tooltip.classList.add('visible');
+        positionSfTooltip(tooltip, event, wrap.getBoundingClientRect());
+        d3.select(this.parentNode).classed('sf-partner-g--hover', true);
+      })
+      .on('mousemove', function(event) {
+        positionSfTooltip(tooltip, event, document.getElementById('sf-map-wrap').getBoundingClientRect());
+      })
+      .on('mouseleave', function() {
+        tooltip.classList.remove('visible');
+        d3.select(this.parentNode).classed('sf-partner-g--hover', false);
+      });
+  }
 }
 
 function renderSfSidebar(state) {
