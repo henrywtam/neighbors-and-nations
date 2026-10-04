@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neighbors &amp; Nations — Status</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="status-page">
+  <div class="status-container">
+    <h1>Neighbors &amp; Nations — Status</h1>
+    <p class="subtitle">Live data dashboard monitor for staff use</p>
+
+    <div class="refresh-bar">
+      <div class="refresh-dot" id="refresh-dot"></div>
+      <span id="refresh-label">Fetching data&hellip;</span>
+    </div>
+
+    <!-- Key stats -->
+    <div class="status-card">
+      <h2>Overview</h2>
+      <div class="stat-grid">
+        <div class="stat-item">
+          <div class="stat-label">Total People</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Sheet Rows</div>
+          <div class="stat-value" id="stat-rows">—</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Invalid Rows</div>
+          <div class="stat-value" id="stat-invalid">—</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Live</div>
+          <div class="stat-value" id="stat-live">—</div>
+        </div>
+        <div class="stat-item" style="grid-column: span 2">
+          <div class="stat-label">Last Read</div>
+          <div class="stat-value" id="stat-read-at" style="font-size:16px">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unmatched cities -->
+    <div class="status-card">
+      <h2>Unmatched Cities (<span id="unmatched-count">0</span>)</h2>
+      <p style="font-size:13px; color:#6b7280; margin-bottom:14px;">
+        City names entered by respondents that could not be matched to a GeoNames location.
+        Add overrides in the Cities tab of the spreadsheet.
+      </p>
+      <div id="unmatched-body">
+        <p class="status-empty">No unmatched cities.</p>
+      </div>
+    </div>
+
+    <p class="status-credit">City geocoding data: <a href="https://www.geonames.org/" style="color:#6b7280">GeoNames</a></p>
+  </div>
+
+  <script>
+    // Auto-fetch every 10 seconds
+    const INTERVAL_MS = 10000;
+    let lastFetchOk = false;
+
+    function fmt(n) {
+      return n === undefined || n === null ? '—' : String(n);
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      try {
+        return new Date(iso).toLocaleString();
+      } catch { return iso; }
+    }
+
+    function setEl(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function renderState(state) {
+      setEl('stat-total', fmt(state.totalPeople));
+      setEl('stat-rows', fmt(state.rowCount));
+      setEl('stat-invalid', fmt(state.invalidRowCount));
+      setEl('stat-read-at', fmtDate(state.readAt));
+
+      const liveEl = document.getElementById('stat-live');
+      if (liveEl) {
+        liveEl.textContent = state.isLive ? 'Yes' : 'No';
+        liveEl.className = 'stat-value ' + (state.isLive ? 'live' : 'dead');
+      }
+
+      // Unmatched cities
+      const unmatched = state.unmatchedCities || [];
+      setEl('unmatched-count', unmatched.length);
+      const body = document.getElementById('unmatched-body');
+      if (body) {
+        if (unmatched.length === 0) {
+          body.innerHTML = '<p class="status-empty">No unmatched cities.</p>';
+        } else {
+          const rows = unmatched.map(u =>
+            `<tr><td>${esc(u.city)}</td><td>${esc(u.country)}</td></tr>`
+          ).join('');
+          body.innerHTML = `
+            <table class="status-table">
+              <thead><tr><th>Typed City Name</th><th>Country</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          `;
+        }
+      }
+    }
+
+    function esc(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch('/api/state');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        renderState(data);
+        lastFetchOk = true;
+
+        const dot = document.getElementById('refresh-dot');
+        const label = document.getElementById('refresh-label');
+        if (dot) dot.className = 'refresh-dot';
+        if (label) label.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        lastFetchOk = false;
+        const dot = document.getElementById('refresh-dot');
+        const label = document.getElementById('refresh-label');
+        if (dot) dot.className = 'refresh-dot stale';
+        if (label) label.textContent = 'Error fetching state: ' + err.message;
+      }
+    }
+
+    // Initial fetch + interval
+    fetchState();
+    setInterval(fetchState, INTERVAL_MS);
+  </script>
+</body>
+</html>

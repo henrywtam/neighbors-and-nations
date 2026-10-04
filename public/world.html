@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RealitySF Global Discovery: Our Connected World</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+  <!-- App-level tab navigation -->
+  <div id="app-nav">
+    <button class="app-tab active" data-view="world">🌍 World Map</button>
+    <button class="app-tab" data-view="sf">🌉 San Francisco</button>
+  </div>
+
+  <!-- ====== World view ====== -->
+  <div id="world-view" class="app-view active">
+    <div id="world-layout">
+
+      <!-- Map panel (75%) -->
+      <div id="map-panel">
+        <div id="map-header">
+          <div id="map-title">🗺️ RealitySF Global Discovery: Our Connected World</div>
+          <div id="map-subtitle">💓 The Global Heartbeat &mdash; Our Congregation at RealitySF</div>
+          <div id="people-counter">
+            <span class="count-number" id="people-count">0</span>
+            <span> 👥 people have shared their heart</span>
+          </div>
+          <div id="live-indicator">
+            <div id="live-dot"></div>
+            <div class="live-info">
+              <span id="live-label">Live</span>
+              <span id="last-pulled" class="last-pulled"></span>
+            </div>
+          </div>
+        </div>
+        <div id="map-svg-wrap">
+          <div class="ocean-lb" id="olb-countries" data-lb-type="countries"></div>
+          <div class="ocean-lb" id="olb-cities" data-lb-type="cities"></div>
+          <div class="ocean-lb" id="olb-regions" data-lb-type="regions"></div>
+        </div>
+        <div id="map-attribution">City data: GeoNames</div>
+      </div>
+
+      <!-- Leaderboard panel (25%) -->
+      <div id="leaderboard-panel">
+        <div id="leaderboard-header">
+          <div id="leaderboard-title">⛪ Our Congregation</div>
+          <div id="leaderboard-total">
+            <span class="lb-total-num" id="lb-total-num">0</span> people have shared
+          </div>
+        </div>
+        <div id="leaderboard-tabs">
+          <div class="lb-tab active" data-tab="0">🌍 Places</div>
+          <div class="lb-tab" data-tab="1">❤️ Issues</div>
+          <div class="lb-tab" data-tab="2">💼 Vocations</div>
+        </div>
+        <div id="leaderboard-body">
+          <div class="lb-list active" id="lb-places"></div>
+          <div class="lb-list" id="lb-heartbeats"></div>
+          <div class="lb-list" id="lb-vocations"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====== San Francisco view ====== -->
+  <div id="sf-view" class="app-view">
+    <div id="sf-layout">
+
+      <!-- SF map panel (75%) -->
+      <div id="sf-map-panel">
+        <div id="sf-header">
+          <div id="sf-title">🌉 San Francisco</div>
+          <div id="sf-subtitle">🏠 Where Our People Live</div>
+          <div id="sf-live-indicator">
+            <div id="sf-live-dot"></div>
+            <div class="live-info">
+              <span id="sf-live-label">Live</span>
+              <span id="sf-last-pulled" class="last-pulled"></span>
+            </div>
+          </div>
+        </div>
+        <div id="sf-map-wrap">
+          <!-- SF map SVG injected by world.js -->
+        </div>
+        <div id="sf-attribution">Neighborhood boundaries: SF Planning Dept &mdash; <a href="https://data.sf.gov/Geographic-Locations-and-Boundaries/Analysis-Neighborhoods/p5b7-5n3h" target="_blank" rel="noopener">DataSF Analysis Neighborhoods</a></div>
+      </div>
+
+      <!-- SF sidebar (25%) -->
+      <div id="sf-sidebar">
+        <div id="sf-lb-header">
+          <div id="sf-lb-title">📍 Neighborhoods</div>
+          <div id="sf-lb-total">
+            <span class="lb-total-num" id="sf-lb-num">0</span> SF residents
+          </div>
+        </div>
+        <div id="sf-lb-body"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- D3 and topojson from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <!-- App -->
+  <script src="/assets/world.js"></script>
+</body>
+</html>
