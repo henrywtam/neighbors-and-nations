@@ -971,7 +971,7 @@ function setupAppTabs() {
     document.querySelectorAll('.app-view').forEach(v => {
       v.classList.toggle('active', v.id === `${view}-view`);
     });
-    if (pushHistory) history.pushState({ view }, '', `#${view}`);
+    if (pushHistory) history.pushState({ view }, '', `/${view}`);
     if (view === 'sf') {
       if (!sfGeoData) {
         try { await loadSfGeo(); } catch (e) { console.error('[sf] GeoJSON load failed:', e); return; }
@@ -984,12 +984,12 @@ function setupAppTabs() {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
-  // Hash-based routing: read on load, follow browser back/forward
-  const initialHash = location.hash.replace('#', '');
-  if (initialHash === 'sf') switchView('sf', false);
+  // Pathname-based routing: read on load, follow browser back/forward
+  const initialPath = location.pathname.replace(/^\//, '') || 'world';
+  if (initialPath === 'sf') switchView('sf', false);
 
   window.addEventListener('popstate', (e) => {
-    const view = (e.state && e.state.view) || location.hash.replace('#', '') || 'world';
+    const view = (e.state && e.state.view) || (location.pathname === '/sf' ? 'sf' : 'world');
     switchView(view, false);
   });
 }

@@ -101,9 +101,10 @@ const app = express();
 
 app.use(express.static(PUBLIC_DIR));
 
-// Static HTML routes (also served via static, but explicit for clarity)
+// App routes — all serve the same SPA; client JS picks the view from the path
 app.get('/', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
-app.get('/sf', (_req, res) => res.redirect('/'));
+app.get('/world', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
+app.get('/sf', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/status', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'status.html')));
 
 // API: current state as JSON
