@@ -768,7 +768,15 @@ function renderPlacesList(state, total) {
   const top = items.slice(0, 10);
   const maxCount = top.length > 0 ? top[0].count : 1;
 
-  renderRankedList(list, top, total, maxCount);
+  let prevCounts = null;
+  if (previousState) {
+    prevCounts = {};
+    for (const [n, c] of Object.entries(previousState.countryPicks || {})) prevCounts[n] = c;
+    for (const [n, c] of Object.entries(previousState.regionPicks || {})) prevCounts[n] = c;
+    const prevSfBay = previousState.sfBayCount || 0;
+    if (prevSfBay > 0) prevCounts['SF & Bay Area'] = prevSfBay;
+  }
+  renderRankedList(list, top, total, maxCount, prevCounts);
 }
 
 function renderHeartbeatList(state, total) {
@@ -782,7 +790,10 @@ function renderHeartbeatList(state, total) {
     .slice(0, 10);
 
   const maxCount = items.length > 0 ? items[0].count : 1;
-  renderRankedList(list, items, total, maxCount);
+  const prevCounts = previousState
+    ? Object.fromEntries(Object.entries(previousState.heartbeatCounts || {}).map(([k, v]) => [k, v.count || v]))
+    : null;
+  renderRankedList(list, items, total, maxCount, prevCounts);
 }
 
 function renderVocationList(state, total) {
@@ -796,10 +807,13 @@ function renderVocationList(state, total) {
     .slice(0, 10);
 
   const maxCount = items.length > 0 ? items[0].count : 1;
-  renderRankedList(list, items, total, maxCount);
+  const prevCounts = previousState
+    ? Object.fromEntries(Object.entries(previousState.vocationCounts || {}).map(([k, v]) => [k, v.count || v]))
+    : null;
+  renderRankedList(list, items, total, maxCount, prevCounts);
 }
 
-function renderRankedList(container, items, total, maxCount) {
+function renderRankedList(container, items, total, maxCount, prevCounts = null) {
   // Record old positions for FLIP animation
   const oldPositions = new Map();
   container.querySelectorAll('.lb-row[data-key]').forEach(el => {
@@ -815,8 +829,12 @@ function renderRankedList(container, items, total, maxCount) {
     const pct = total > 0 ? ((item.count / total) * 100).toFixed(0) : '0';
     const barWidth = maxCount > 0 ? (item.count / maxCount * 100).toFixed(1) : '0';
 
+    const prevCount = prevCounts !== null ? (prevCounts[item.name] || 0) : null;
+    const flashClass = prevCounts !== null
+      ? (prevCount === 0 ? 'lb-row--new' : item.count > prevCount ? 'lb-row--flash' : '')
+      : '';
     const row = document.createElement('div');
-    row.className = `lb-row type-${item.type}`;
+    row.className = `lb-row type-${item.type}${flashClass ? ' ' + flashClass : ''}`;
     row.dataset.key = item.name;
 
     row.innerHTML = `
@@ -944,24 +962,35 @@ function setupAppTabs() {
   const partnersBtn = document.getElementById('sf-partners-toggle');
   if (partnersBtn) partnersBtn.addEventListener('click', toggleSfPartners);
 
-  document.querySelectorAll('.app-tab').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const view = btn.dataset.view;
-      if (view === currentView) return;
-      currentView = view;
-      document.querySelectorAll('.app-tab').forEach(b => {
-        b.classList.toggle('active', b.dataset.view === view);
-      });
-      document.querySelectorAll('.app-view').forEach(v => {
-        v.classList.toggle('active', v.id === `${view}-view`);
-      });
-      if (view === 'sf') {
-        if (!sfGeoData) {
-          try { await loadSfGeo(); } catch (e) { console.error('[sf] GeoJSON load failed:', e); return; }
-        }
-        initSfMap();
-      }
+  async function switchView(view, pushHistory = true) {
+    if (view === currentView) return;
+    currentView = view;
+    document.querySelectorAll('.app-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === view);
     });
+    document.querySelectorAll('.app-view').forEach(v => {
+      v.classList.toggle('active', v.id === `${view}-view`);
+    });
+    if (pushHistory) history.pushState({ view }, '', `#${view}`);
+    if (view === 'sf') {
+      if (!sfGeoData) {
+        try { await loadSfGeo(); } catch (e) { console.error('[sf] GeoJSON load failed:', e); return; }
+      }
+      initSfMap();
+    }
+  }
+
+  document.querySelectorAll('.app-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Hash-based routing: read on load, follow browser back/forward
+  const initialHash = location.hash.replace('#', '');
+  if (initialHash === 'sf') switchView('sf', false);
+
+  window.addEventListener('popstate', (e) => {
+    const view = (e.state && e.state.view) || location.hash.replace('#', '') || 'world';
+    switchView(view, false);
   });
 }
 
@@ -1033,6 +1062,7 @@ function renderSfMap(state) {
   if (g.empty()) return;
 
   const sfCounts = state.sfNeighborhoodCounts || {};
+  const prevSfCounts = previousState ? (previousState.sfNeighborhoodCounts || {}) : {};
   const maxCount = Math.max(1, ...Object.values(sfCounts).map(Number));
   const features = sfGeoData.features || [];
 
@@ -1043,16 +1073,22 @@ function renderSfMap(state) {
     const geoName   = feature.properties[sfNbhdNameKey] ?? '';
     const canonical = SF_GEO_TO_CANONICAL[geoName] ?? geoName;
     const count     = Number(sfCounts[canonical] || 0);
+    const prevCount = Number(prevSfCounts[canonical] || 0);
+    const didIncrease = previousState !== null && count > prevCount;
 
     const fill = count === 0
       ? 'hsl(35, 80%, 8%)'
       : `hsl(35, 90%, ${(38 + 27 * Math.sqrt(count / maxCount)).toFixed(1)}%)`;
 
-    g.append('path')
+    const path = g.append('path')
       .attr('d', sfPathGen(feature))
-      .attr('fill', fill)
+      .attr('fill', didIncrease ? (prevCount === 0 ? 'hsl(35, 100%, 72%)' : 'hsl(35, 100%, 58%)') : fill)
       .attr('stroke', 'rgba(255,255,255,0.12)')
       .attr('stroke-width', 0.8);
+
+    if (didIncrease) {
+      path.transition().duration(prevCount === 0 ? 1800 : 1200).attr('fill', fill);
+    }
   }
 
   // Pass 2: draw all labels on top of borders
@@ -1143,6 +1179,7 @@ function renderSfPartners(g) {
 
 function renderSfSidebar(state) {
   const sfCounts = state.sfNeighborhoodCounts || {};
+  const prevSfCounts = previousState ? (previousState.sfNeighborhoodCounts || {}) : {};
   const numEl = document.getElementById('sf-lb-num');
   const body = document.getElementById('sf-lb-body');
 
@@ -1159,7 +1196,11 @@ function renderSfSidebar(state) {
   body.innerHTML = items.map((item, i) => {
     const pct = total > 0 ? ((item.count / total) * 100).toFixed(0) : '0';
     const barW = (item.count / maxCount * 100).toFixed(1);
-    return `<div class="lb-row">
+    const prevCount = Number(prevSfCounts[item.name] || 0);
+    const flashClass = previousState
+      ? (prevCount === 0 ? 'lb-row--new' : item.count > prevCount ? 'lb-row--flash' : '')
+      : '';
+    return `<div class="lb-row${flashClass ? ' ' + flashClass : ''}">
       <span class="lb-rank">${i + 1}</span>
       <span class="lb-name">${escHtml(item.name)}</span>
       <span class="lb-meta"><span class="lb-count">${item.count}</span><span class="lb-pct">${pct}%</span></span>
