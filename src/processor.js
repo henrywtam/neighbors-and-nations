@@ -5,6 +5,32 @@
  * and produces ProcessedState. No I/O.
  */
 
+import { countryAliases } from './geonames.js';
+
+// ---------------------------------------------------------------------------
+// Country name normalization
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize a raw country name: trim, fix case, apply aliases.
+ * Returns the canonical name as stored in geonames.countryNameToCode,
+ * or the original trimmed value if no alias matches.
+ */
+export function normalizeCountryName(raw, countryNameToCode, aliases = countryAliases) {
+  const trimmed = raw.trim();
+  const key = trimmed.toLowerCase();
+  // Direct alias hit (aliases live in public/data/countries.json)
+  if (aliases[key]) return aliases[key];
+  // Already a valid canonical name (exact match)
+  if (countryNameToCode[trimmed]) return trimmed;
+  // Case-insensitive scan of canonical names
+  const lower = trimmed.toLowerCase();
+  for (const canonical of Object.keys(countryNameToCode)) {
+    if (canonical.toLowerCase() === lower) return canonical;
+  }
+  return trimmed;
+}
+
 // ---------------------------------------------------------------------------
 // parsePlaceValue
 // ---------------------------------------------------------------------------
@@ -165,7 +191,7 @@ export function processResponses(sheetData, config, geonames) {
 
       if (parsed.type === 'city_in_country') {
         // City-type pick: plot dot only, do NOT highlight the country
-        const countryName = parsed.value;
+        const countryName = normalizeCountryName(parsed.value, geonames.countryNameToCode ?? {});
         if (city) {
           const cityCoords = geonames.lookupCity?.(city, countryName) ?? null;
           if (cityCoords) {
@@ -188,7 +214,7 @@ export function processResponses(sheetData, config, geonames) {
         personRegions.add(parsed.value);
         // region pick does NOT add to country picks
       } else if (parsed.type === 'country') {
-        const countryName = parsed.value;
+        const countryName = normalizeCountryName(parsed.value, geonames.countryNameToCode ?? {});
         const hasIsoCode = !!(geonames.countryNameToCode?.[countryName]);
 
         if (!hasIsoCode) {

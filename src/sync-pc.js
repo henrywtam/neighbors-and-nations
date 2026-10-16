@@ -11,6 +11,7 @@
 import { readSheet, appendRows, writeUnmatched } from './sheets.js';
 import { getSubmissionsWithValues } from './planningcenter.js';
 import { lookupCityGlobal, countryNameToCode } from './geonames.js';
+import { normalizeCountryName } from './processor.js';
 
 // ---------------------------------------------------------------------------
 // Form config
@@ -106,8 +107,9 @@ function mapToRow(sub, unmatchedItems = []) {
     } else if (placeType === 'Country') {
       const typedCountry = get(p.country);
       if (typedCountry) {
-        if (countryNameToCode[typedCountry]) {
-          placeValue = typedCountry;
+        const countryName = normalizeCountryName(typedCountry, countryNameToCode);
+        if (countryNameToCode[countryName]) {
+          placeValue = countryName;
         } else {
           unmatchedItems.push({ person_id: sub.person_id, type: 'country', value: typedCountry, context: '' });
         }

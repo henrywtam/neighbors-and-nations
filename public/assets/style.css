@@ -947,3 +947,11 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.country-marker {
+  fill: hsl(35, 100%, 60%);
+  stroke: hsl(35, 100%, 80%);
+  stroke-width: 0.8;
+  filter: drop-shadow(0 0 6px rgba(255, 160, 30, 0.9));
+  pointer-events: none;
+}

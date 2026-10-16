@@ -5,178 +5,28 @@
 'use strict';
 
 // ---------------------------------------------------------------------------
-// Country name → ISO numeric code mapping
-// Covers all countries from geonames.js countryNameToCode (~85 entries) plus extras
+// Map shape → country name lookups, built from /data/countries.json
+// (shared with the server). A shape matches by topojson name first — this
+// covers territories rolled into a parent and shapes with no numeric id —
+// then by zero-padded ISO numeric id.
 // ---------------------------------------------------------------------------
-const COUNTRY_NAME_TO_ISO_NUM = {
-  'Afghanistan': '4',
-  'Algeria': '12',
-  'Angola': '24',
-  'Argentina': '32',
-  'Australia': '36',
-  'Austria': '40',
-  'Bangladesh': '50',
-  'Belgium': '56',
-  'Bolivia': '68',
-  'Brazil': '76',
-  'Burkina Faso': '854',
-  'Cambodia': '116',
-  'Cameroon': '120',
-  'Canada': '124',
-  'Chad': '148',
-  'Chile': '152',
-  'China': '156',
-  'Colombia': '170',
-  'Costa Rica': '188',
-  'Croatia': '191',
-  'Cuba': '192',
-  'Czech Republic': '203',
-  'Democratic Republic of Congo': '180',
-  'Denmark': '208',
-  'Dominican Republic': '214',
-  'Ecuador': '218',
-  'Egypt': '818',
-  'El Salvador': '222',
-  'Ethiopia': '231',
-  'Finland': '246',
-  'France': '250',
-  'Germany': '276',
-  'Ghana': '288',
-  'Greece': '300',
-  'Guatemala': '320',
-  'Haiti': '332',
-  'Honduras': '340',
-  'Hungary': '348',
-  'India': '356',
-  'Indonesia': '360',
-  'Iran': '364',
-  'Iraq': '368',
-  'Israel': '376',
-  'Italy': '380',
-  'Jamaica': '388',
-  'Japan': '392',
-  'Jordan': '400',
-  'Kenya': '404',
-  'Laos': '418',
-  'Lebanon': '422',
-  'Libya': '434',
-  'Madagascar': '450',
-  'Malaysia': '458',
-  'Mali': '466',
-  'Mexico': '484',
-  'Morocco': '504',
-  'Mozambique': '508',
-  'Myanmar': '104',
-  'Nepal': '524',
-  'Netherlands': '528',
-  'New Zealand': '554',
-  'Nicaragua': '558',
-  'Niger': '562',
-  'Nigeria': '566',
-  'Norway': '578',
-  'Pakistan': '586',
-  'Panama': '591',
-  'Peru': '604',
-  'Philippines': '608',
-  'Poland': '616',
-  'Portugal': '620',
-  'Romania': '642',
-  'Russia': '643',
-  'Rwanda': '646',
-  'Saudi Arabia': '682',
-  'Senegal': '686',
-  'Serbia': '688',
-  'Singapore': '702',
-  'South Africa': '710',
-  'South Korea': '410',
-  'South Sudan': '728',
-  'Spain': '724',
-  'Sri Lanka': '144',
-  'Sudan': '729',
-  'Sweden': '752',
-  'Switzerland': '756',
-  'Syria': '760',
-  'Tanzania': '834',
-  'Thailand': '764',
-  'Tunisia': '788',
-  'Turkey': '792',
-  'Uganda': '800',
-  'Ukraine': '804',
-  'United Arab Emirates': '784',
-  'United Kingdom': '826',
-  'United States': '840',
-  'Venezuela': '862',
-  'Vietnam': '704',
-  'Zambia': '894',
-  'Zimbabwe': '716',
-  'Taiwan': '158',
-  // Middle East
-  'Yemen': '887',
-  'Oman': '512',
-  'Kuwait': '414',
-  'Qatar': '634',
-  // Europe
-  'Slovakia': '703',
-  'Slovenia': '705',
-  'Montenegro': '499',
-  'Moldova': '498',
-  'Latvia': '428',
-  'Lithuania': '440',
-  'Luxembourg': '442',
-  'Malta': '470',
-  'North Macedonia': '807',
-  'Albania': '008',
-  'Estonia': '233',
-  'Bosnia and Herzegovina': '070',
-  // Africa
-  'Namibia': '516',
-  'Malawi': '454',
-  'Liberia': '430',
-  'Sierra Leone': '694',
-  'Togo': '768',
-  'Somalia': '706',
-  'Mauritius': '480',
-  'Mauritania': '478',
-  'eSwatini': '748',
-  'Lesotho': '426',
-  'Benin': '204',
-  'Gambia': '270',
-  'Guinea': '324',
-  'Guinea-Bissau': '624',
-  'Equatorial Guinea': '226',
-  'Gabon': '266',
-  'Central African Republic': '140',
-  'Eritrea': '232',
-  'Djibouti': '262',
-  // Latin America
-  'Paraguay': '600',
-  'Uruguay': '858',
-  'Trinidad and Tobago': '780',
-  'Belize': '084',
-  'Guyana': '328',
-  'Suriname': '740',
-  // Central Asia
-  'Mongolia': '496',
-  'Kazakhstan': '398',
-  'Uzbekistan': '860',
-  'Kyrgyzstan': '417',
-  'Tajikistan': '762',
-  'Turkmenistan': '795',
-  // Asia-Pacific
-  'Papua New Guinea': '598',
-  'Timor-Leste': '626',
-  'Fiji': '242',
-  'Solomon Islands': '090',
-  'Vanuatu': '548',
-  'Samoa': '882',
-  'Tonga': '776',
-  'North Korea': '408',
-};
+let shapeNameToCountry = {};
+let isoNumToCountry = {};
 
-// Reverse: ISO numeric string → country name
-const ISO_NUM_TO_COUNTRY_NAME = Object.fromEntries(
-  Object.entries(COUNTRY_NAME_TO_ISO_NUM).map(([name, num]) => [num, name])
-);
+function buildCountryLookups(countries) {
+  shapeNameToCountry = {};
+  isoNumToCountry = {};
+  for (const c of countries) {
+    if (c.num) isoNumToCountry[c.num] = c.name;
+    for (const shape of c.shapes || []) shapeNameToCountry[shape] = c.name;
+  }
+}
+
+function countryForFeature(f) {
+  const shapeName = f.properties && f.properties.name;
+  return shapeNameToCountry[shapeName]
+    || (f.id != null ? isoNumToCountry[String(f.id).padStart(3, '0')] : undefined);
+}
 
 // ---------------------------------------------------------------------------
 // Ocean leaderboard anchor positions [lon, lat]
@@ -362,11 +212,13 @@ function showReconnecting() {
 // ---------------------------------------------------------------------------
 async function loadTopo() {
   try {
-    const res = await fetch('/data/world-50m.topo.json');
-    topoData = await res.json();
+    const [topoRes, countriesRes] = await Promise.all([
+      fetch('/data/world-50m.topo.json'),
+      fetch('/data/countries.json'),
+    ]);
+    topoData = await topoRes.json();
+    buildCountryLookups(await countriesRes.json());
     countryFeatures = topojson.feature(topoData, topoData.objects.countries).features;
-    // Filter out Antarctica (ISO 010)
-    countryFeatures = countryFeatures.filter(f => String(f.id) !== '10');
     initMap();
     if (currentState) renderMap(currentState, null);
   } catch (e) {
@@ -429,6 +281,8 @@ function initMap() {
 
   // Country paths group
   svg.append('g').attr('class', 'countries');
+  // Glow markers for lit countries too small to see at this scale
+  svg.append('g').attr('class', 'country-markers');
   // Region outlines group
   svg.append('g').attr('class', 'regions');
   // City dots group
@@ -526,8 +380,8 @@ function renderMap(state, prevState) {
 // ---------------------------------------------------------------------------
 // Country colors
 // ---------------------------------------------------------------------------
-function countryFill(countryName, isSelectable, countryPicks, maxCount) {
-  const count = isSelectable ? (countryPicks[countryName] || 0) : 0;
+function countryFill(countryName, countryPicks, maxCount) {
+  const count = countryName ? (countryPicks[countryName] || 0) : 0;
   if (count === 0) return 'hsl(35, 80%, 8%)'; // uniform dark baseline for all countries
 
   const minGlow = 8;
@@ -547,11 +401,11 @@ function renderCountries(state, prevState) {
     if (cnt > maxCount) maxCount = cnt;
   }
 
-  const selectableNames = new Set(Object.keys(COUNTRY_NAME_TO_ISO_NUM));
   const g = svg.select('g.countries');
 
+  // Key by shape name: ids repeat (Australia/Ashmore) or are missing (Kosovo)
   const paths = g.selectAll('path.country-path')
-    .data(countryFeatures, d => d.id);
+    .data(countryFeatures, d => d.properties.name);
 
   // Enter
   paths.enter()
@@ -559,9 +413,8 @@ function renderCountries(state, prevState) {
     .attr('class', 'country-path')
     .attr('d', pathGen)
     .each(function(d) {
-      const name = ISO_NUM_TO_COUNTRY_NAME[String(d.id)];
-      const isSelectable = !!(name && selectableNames.has(name));
-      const fill = countryFill(name, isSelectable, countryPicks, maxCount);
+      const name = countryForFeature(d);
+      const fill = countryFill(name, countryPicks, maxCount);
       d3.select(this)
         .attr('fill', fill)
         .attr('stroke', 'rgba(255,255,255,0.05)')
@@ -571,14 +424,13 @@ function renderCountries(state, prevState) {
   // Update existing
   g.selectAll('path.country-path')
     .each(function(d) {
-      const name = ISO_NUM_TO_COUNTRY_NAME[String(d.id)];
-      const isSelectable = !!(name && selectableNames.has(name));
-      if (!isSelectable) return;
+      const name = countryForFeature(d);
+      if (!name) return;
 
       const prevCount = prevState ? ((prevState.countryPicks && prevState.countryPicks[name]) || 0) : 0;
       const newCount = countryPicks[name] || 0;
 
-      const fill = countryFill(name, isSelectable, countryPicks, maxCount);
+      const fill = countryFill(name, countryPicks, maxCount);
       const el = d3.select(this);
 
       if (prevState && newCount > prevCount) {
@@ -599,6 +451,50 @@ function renderCountries(state, prevState) {
           .style('filter', newCount > 0 ? 'drop-shadow(0 0 8px rgba(255,160,30,0.6))' : 'none');
       }
     });
+
+  renderCountryMarkers(countryPicks, prevState);
+}
+
+// ---------------------------------------------------------------------------
+// Tiny-country markers — microstates and small islands are sub-pixel at this
+// scale, so a lit one gets a glowing dot at the centroid of its largest shape.
+// ---------------------------------------------------------------------------
+const TINY_COUNTRY_AREA_PX = 12;
+
+function renderCountryMarkers(countryPicks, prevState) {
+  const g = svg.select('g.country-markers');
+  g.selectAll('*').remove();
+
+  // Largest on-screen shape per lit country
+  const largest = new Map();
+  for (const f of countryFeatures) {
+    const name = countryForFeature(f);
+    if (!name || !countryPicks[name]) continue;
+    const area = pathGen.area(f);
+    const cur = largest.get(name);
+    if (!cur || area > cur.area) largest.set(name, { feature: f, area });
+  }
+
+  for (const [name, { feature, area }] of largest) {
+    if (area >= TINY_COUNTRY_AREA_PX) continue;
+    const [cx, cy] = pathGen.centroid(feature);
+    if (isNaN(cx)) continue;
+
+    const prevCount = prevState ? ((prevState.countryPicks && prevState.countryPicks[name]) || 0) : 0;
+    const circle = g.append('circle')
+      .attr('class', 'country-marker')
+      .attr('cx', cx)
+      .attr('cy', cy)
+      .attr('r', 3.5);
+
+    if (prevState && prevCount === 0) {
+      circle.attr('r', 0)
+        .transition()
+        .duration(600)
+        .ease(d3.easeBounceOut)
+        .attr('r', 3.5);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -11,7 +11,8 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 | `src/config.js` | Single frozen config object. All tunable knobs live here. |
 | `src/sheets.js` | Read-only Google Sheets reader. Exports `readSheet(sheetId, credentials?)`. |
 | `src/processor.js` | Pure data transformation. `processResponses(sheetData, config, geonames)` → ProcessedState. No I/O. |
-| `src/geonames.js` | In-memory city lookup from `data/cities15k.json`. Also exports `countryNameToCode`. |
+| `src/geonames.js` | In-memory city lookup from `data/cities15k.json`. Also exports `countryNameToCode` / `countryAliases`, derived from `countries.json`. |
+| `public/data/countries.json` | Single country list shared by server and map: name, alpha-2, ISO numeric (zero-padded), typed-name `aliases`, and extra map `shapes` (territories rolled into a parent, e.g. Puerto Rico → US). |
 | `src/index.js` | Express server, SSE stream, polling loop. |
 
 ## Google Sheet Tab Structure

@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import { readSheet, appendRows, writeUnmatched } from '../src/sheets.js';
 import { getSubmissionsWithValues } from '../src/planningcenter.js';
 import { initGeonames, lookupCityGlobal, countryNameToCode } from '../src/geonames.js';
+import { normalizeCountryName } from '../src/processor.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -261,8 +262,9 @@ function mapToRow(sub, unmatchedItems = []) {
     } else if (placeType === 'Country') {
       const typedCountry = get(p.country);
       if (typedCountry) {
-        if (countryNameToCode[typedCountry]) {
-          placeValue = typedCountry;
+        const countryName = normalizeCountryName(typedCountry, countryNameToCode);
+        if (countryNameToCode[countryName]) {
+          placeValue = countryName;
         } else {
           unmatchedItems.push({ person_id: sub.person_id, type: 'country', value: typedCountry, context: '' });
         }
