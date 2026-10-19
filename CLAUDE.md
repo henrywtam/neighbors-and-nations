@@ -30,9 +30,9 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 
 ### Responses Tab Columns
 
-`person_id`, `submitted_at`, `is_test`, `vocation_1..3`, `heartbeat_1..3`, `connect_1..3_place`, `connect_1..3_city`, `connect_where_i_live`, `lives_area`, `lives_place`, `submission_id`
+`person_id`, `submitted_at`, `is_test`, `vocation_1..3`, `heartbeat_1..3`, `connect_1..3_place`, `connect_1..3_city`, `connect_where_i_live`, `lives_area`, `lives_place`, `submission_id`, `email_key`
 
-`submission_id` (Planning Center form submission ID) was added later; the header cell is written on startup if missing. Older rows are deduped by `person_id|submitted_at` instead.
+`submission_id` (Planning Center form submission ID) and `email_key` (first 16 hex chars of SHA-256 of the person's lowercased primary email — the address itself is never stored) were added later; their header cells are written on startup if missing. Older rows have neither: sync dedups them by `person_id|submitted_at`, and the processor links them to an `email_key` via `person_id`.
 
 ## Environment Variables
 
@@ -70,4 +70,4 @@ npm run pc-webhook -- https://<host>/webhooks/planning-center   # subscribe; pri
 - **Responses is append-only** — the app never clears or rewrites existing rows (only `npm run seed`, a dev tool, does).
 - **Anything that appends to Responses must update Meta `row_count`**, or the server won't see the rows until restart.
 - **City lookup priority**: `cityFixes` map (manual overrides in Cities tab) → `geonames.lookupCity()` (bundled JSON).
-- **Deduplication**: sync skips any PC submission ID already in the Sheet; the processor then keeps the latest `submitted_at` per `person_id`, so a resubmission replaces that person's earlier answers.
+- **Deduplication**: sync skips any PC submission ID already in the Sheet. The processor then keeps the latest `submitted_at` per person, where a person is their `email_key` (so duplicate PC profiles with the same email collapse), falling back to `person_id`. A resubmission replaces that person's earlier answers.

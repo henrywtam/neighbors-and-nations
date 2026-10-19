@@ -249,7 +249,7 @@ export async function getSubmissionDetails(submissions) {
  * Get all email addresses for a person.
  *
  * @param {string} personId
- * @returns {Promise<string[]>}
+ * @returns {Promise<string[]>} primary email first
  */
 export async function getPersonEmails(personId) {
   if (!personId) return [];
@@ -259,5 +259,8 @@ export async function getPersonEmails(personId) {
     appId,
     secret,
   );
-  return items.map(item => item.attributes?.address ?? '').filter(Boolean);
+  return items
+    .sort((a, b) => Number(!!b.attributes?.primary) - Number(!!a.attributes?.primary))
+    .map(item => item.attributes?.address ?? '')
+    .filter(Boolean);
 }

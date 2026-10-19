@@ -91,6 +91,28 @@ test('deduplication keeps the latest row per person_id', () => {
   assert.equal(state.countryPicks.get('Kenya'), undefined, 'earlier row (Kenya) should be discarded');
 });
 
+test('deduplication by email_key collapses different person_ids, latest wins', () => {
+  const rows = [
+    makeRow({ person_id: 'P1', email_key: 'abc', submitted_at: '2026-11-01T10:00:00Z', connect_1_place: 'Kenya' }),
+    makeRow({ person_id: 'P2', email_key: 'abc', submitted_at: '2026-11-05T10:00:00Z', connect_1_place: 'Thailand' }),
+    makeRow({ person_id: 'P3', email_key: 'xyz', submitted_at: '2026-11-02T10:00:00Z', connect_1_place: 'Japan' }),
+  ];
+  const state = processResponses(makeSheetData({ responses: rows }), defaultConfig, mockGeonames);
+  assert.equal(state.totalPeople, 2);
+  assert.equal(state.countryPicks.get('Thailand'), 1);
+  assert.equal(state.countryPicks.get('Kenya'), undefined);
+});
+
+test('legacy row without email_key merges with a newer row for the same person_id', () => {
+  const rows = [
+    makeRow({ person_id: 'P1', submitted_at: '2026-11-01T10:00:00Z', connect_1_place: 'Kenya' }),
+    makeRow({ person_id: 'P1', email_key: 'abc', submitted_at: '2026-11-05T10:00:00Z', connect_1_place: 'Thailand' }),
+  ];
+  const state = processResponses(makeSheetData({ responses: rows }), defaultConfig, mockGeonames);
+  assert.equal(state.totalPeople, 1);
+  assert.equal(state.countryPicks.get('Kenya'), undefined);
+});
+
 // 2. is_test exclusion
 test('is_test=TRUE row excluded when showTestRows=false', () => {
   const testRow = makeRow({ is_test: 'TRUE' });

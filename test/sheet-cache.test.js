@@ -37,10 +37,10 @@ test('init bootstraps Meta and adds submission_id header once', async () => {
   const cache = createSheetCache('sheet', s.api);
   await cache.init();
   assert.equal(cache.rowCount, 2);
-  assert.deepEqual(cache.header, [...HEADER, 'submission_id']);
+  assert.deepEqual(cache.header, [...HEADER, 'submission_id', 'email_key']);
   assert.equal(s.meta.row_count, 2);
   assert.equal(s.meta.last_synced_at, '2026-10-03T00:00:00Z');
-  assert.ok(s.calls.includes('header:3'));
+  assert.ok(s.calls.includes('header:3') && s.calls.includes('header:4'));
 });
 
 test('unchanged Meta → one Meta read, no row reads', async () => {
@@ -93,4 +93,12 @@ test('readOnly init writes nothing', async () => {
   const s = fakeApi({ rows: [['1', '2026-10-01T00:00:00Z', 'FALSE']] });
   await createSheetCache('sheet', s.api).init({ readOnly: true });
   assert.ok(!s.calls.some(c => c.startsWith('header') || c === 'writeMeta'));
+});
+
+test('emailKey is case/whitespace-insensitive and blank for no email', async () => {
+  const { emailKey } = await import('../src/sync-pc.js');
+  assert.equal(emailKey(' Foo@Example.com '), emailKey('foo@example.com'));
+  assert.equal(emailKey('foo@example.com').length, 16);
+  assert.equal(emailKey(''), '');
+  assert.notEqual(emailKey('a@x.com'), emailKey('b@x.com'));
 });

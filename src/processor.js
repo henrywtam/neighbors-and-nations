@@ -82,12 +82,25 @@ export function processResponses(sheetData, config, geonames) {
   const { responses = [], regionMap = new Map(), approvals = new Map(), readAt } = sheetData;
 
   // -------------------------------------------------------------------------
-  // Step 1: Deduplicate by person_id — keep only the latest submitted_at
+  // Step 1: Deduplicate by person — keep only the latest submitted_at.
+  // A person is their email_key (hashed primary email) when present, so
+  // duplicate Planning Center profiles with the same email collapse; rows
+  // without one inherit it from another row with the same person_id (older
+  // rows predate email_key), else fall back to person_id.
   // -------------------------------------------------------------------------
+  const emailKeyByPersonId = new Map();
+  for (const row of responses) {
+    const emailKey = (row.email_key ?? '').trim();
+    const personId = (row.person_id ?? '').trim();
+    if (emailKey && personId) emailKeyByPersonId.set(personId, emailKey);
+  }
+
   const byPerson = new Map();
   for (const row of responses) {
-    const pid = (row.person_id ?? '').trim();
-    if (!pid) continue;
+    const personId = (row.person_id ?? '').trim();
+    const emailKey = (row.email_key ?? '').trim() || emailKeyByPersonId.get(personId);
+    if (!personId && !emailKey) continue;
+    const pid = emailKey ? `email:${emailKey}` : personId;
 
     const ts = parseDate(row.submitted_at);
     const existing = byPerson.get(pid);

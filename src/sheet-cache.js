@@ -18,6 +18,9 @@
 import * as sheetsApi from './sheets.js';
 
 export const SUBMISSION_ID_COL = 'submission_id';
+export const EMAIL_KEY_COL = 'email_key';
+// Columns added after launch; header cells are written on startup if missing
+const ADDED_COLS = [SUBMISSION_ID_COL, EMAIL_KEY_COL];
 
 /** Dedup key for rows written before submission_id existed. */
 export function legacyKey(personId, submittedAt) {
@@ -58,10 +61,12 @@ export function createSheetCache(sheetId, api = sheetsApi) {
     submissionIds.clear();
     legacyKeys.clear();
 
-    // Add the submission_id column once (header cell only — data rows untouched)
-    if (header.length > 0 && !header.includes(SUBMISSION_ID_COL)) {
-      if (!readOnly) await api.writeHeaderCell(sheetId, header.length, SUBMISSION_ID_COL);
-      header = [...header, SUBMISSION_ID_COL];
+    // Add new columns once (header cells only — data rows untouched)
+    for (const col of ADDED_COLS) {
+      if (header.length > 0 && !header.includes(col)) {
+        if (!readOnly) await api.writeHeaderCell(sheetId, header.length, col);
+        header = [...header, col];
+      }
     }
 
     addRows(full.rows);

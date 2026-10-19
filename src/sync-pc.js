@@ -12,6 +12,7 @@
  * but delegates to this module.
  */
 
+import { createHash } from 'node:crypto';
 import { appendRows, writeUnmatched, writeMeta } from './sheets.js';
 import { getFormSubmissions, getSubmissionDetails } from './planningcenter.js';
 import { lookupCityGlobal, countryNameToCode } from './geonames.js';
@@ -61,7 +62,19 @@ export const SHEET_COLUMNS = [
   'connect_where_i_live',
   'lives_area', 'lives_place',
   'submission_id',
+  'email_key',
 ];
+
+/**
+ * Stable, non-reversible-at-a-glance key for an email address, so the Sheet
+ * can group a person's submissions without storing the address itself.
+ * SHA-256 of the trimmed, lowercased address, first 16 hex chars.
+ */
+export function emailKey(email) {
+  const norm = String(email ?? '').trim().toLowerCase();
+  if (!norm) return '';
+  return createHash('sha256').update(norm).digest('hex').slice(0, 16);
+}
 
 // ---------------------------------------------------------------------------
 // Row mapper (identical logic to scripts/sync-from-pc.js)
@@ -76,6 +89,7 @@ export function mapToRow(sub, unmatchedItems = [], columns = SHEET_COLUMNS) {
   record['person_id']    = String(sub.person_id ?? sub.id ?? '');
   record['submitted_at'] = sub.created_at ?? '';
   record['submission_id'] = String(sub.id ?? '');
+  record['email_key']     = emailKey(sub.emails?.[0]);  // primary email
   record['is_test']      = (sub.emails ?? []).some(e => e.endsWith('@mac.com')) ? 'TRUE' : 'FALSE';
 
   const vocations = getAll(FIELD.VOCATIONS).slice(0, 3);
