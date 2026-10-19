@@ -423,7 +423,10 @@ function collectMultiSelect(row, prefix) {
   for (const [k, v] of Object.entries(row)) {
     if (!k.startsWith(prefix + '_')) continue;
     if (!v || !String(v).trim()) continue;
-    results.push(String(v).trim());
+    // <prefix>_extra holds picks beyond the third, joined with ' | '
+    for (const part of String(v).split(' | ')) {
+      if (part.trim()) results.push(part.trim());
+    }
   }
   return results;
 }

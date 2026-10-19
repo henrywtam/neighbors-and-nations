@@ -37,7 +37,7 @@ test('init bootstraps Meta and adds submission_id header once', async () => {
   const cache = createSheetCache('sheet', s.api);
   await cache.init();
   assert.equal(cache.rowCount, 2);
-  assert.deepEqual(cache.header, [...HEADER, 'submission_id', 'email_key']);
+  assert.deepEqual(cache.header, [...HEADER, 'submission_id', 'email_key', 'vocation_extra', 'heartbeat_extra']);
   assert.equal(s.meta.row_count, 2);
   assert.equal(s.meta.last_synced_at, '2026-10-03T00:00:00Z');
   assert.ok(s.calls.includes('header:3') && s.calls.includes('header:4'));

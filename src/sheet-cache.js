@@ -20,7 +20,7 @@ import * as sheetsApi from './sheets.js';
 export const SUBMISSION_ID_COL = 'submission_id';
 export const EMAIL_KEY_COL = 'email_key';
 // Columns added after launch; header cells are written on startup if missing
-const ADDED_COLS = [SUBMISSION_ID_COL, EMAIL_KEY_COL];
+const ADDED_COLS = [SUBMISSION_ID_COL, EMAIL_KEY_COL, 'vocation_extra', 'heartbeat_extra'];
 
 /** Dedup key for rows written before submission_id existed. */
 export function legacyKey(personId, submittedAt) {

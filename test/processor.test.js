@@ -113,6 +113,18 @@ test('legacy row without email_key merges with a newer row for the same person_i
   assert.equal(state.countryPicks.get('Kenya'), undefined);
 });
 
+test('picks beyond the third (vocation_extra) are all counted', () => {
+  const row = makeRow({
+    vocation_1: 'Student', vocation_2: 'Healthcare', vocation_3: 'Arts',
+    vocation_extra: 'Trades, Construction & Real Estate | Church & Ministry',
+  });
+  const state = processResponses(makeSheetData({ responses: [row] }), defaultConfig, mockGeonames);
+  const labels = [...state.vocationCounts.keys()];
+  for (const l of ['Student', 'Healthcare', 'Arts', 'Trades, Construction & Real Estate', 'Church & Ministry']) {
+    assert.ok(labels.includes(l), `missing ${l}`);
+  }
+});
+
 // 2. is_test exclusion
 test('is_test=TRUE row excluded when showTestRows=false', () => {
   const testRow = makeRow({ is_test: 'TRUE' });

@@ -63,7 +63,11 @@ export const SHEET_COLUMNS = [
   'lives_area', 'lives_place',
   'submission_id',
   'email_key',
+  'vocation_extra', 'heartbeat_extra',
 ];
+
+// Picks beyond the first 3 go into one *_extra cell, joined with this
+export const EXTRA_SEPARATOR = ' | ';
 
 /**
  * Stable, non-reversible-at-a-glance key for an email address, so the Sheet
@@ -92,15 +96,18 @@ export function mapToRow(sub, unmatchedItems = [], columns = SHEET_COLUMNS) {
   record['email_key']     = emailKey(sub.emails?.[0]);  // primary email
   record['is_test']      = (sub.emails ?? []).some(e => e.endsWith('@mac.com')) ? 'TRUE' : 'FALSE';
 
-  const vocations = getAll(FIELD.VOCATIONS).slice(0, 3);
+  // No cap: the form asks for 3, but every box checked is kept
+  const vocations = getAll(FIELD.VOCATIONS);
   record['vocation_1'] = vocations[0] ?? '';
   record['vocation_2'] = vocations[1] ?? '';
   record['vocation_3'] = vocations[2] ?? '';
+  record['vocation_extra'] = vocations.slice(3).join(EXTRA_SEPARATOR);
 
-  const heartbeats = getAll(FIELD.HEARTBEATS).slice(0, 3);
+  const heartbeats = getAll(FIELD.HEARTBEATS);
   record['heartbeat_1'] = heartbeats[0] ?? '';
   record['heartbeat_2'] = heartbeats[1] ?? '';
   record['heartbeat_3'] = heartbeats[2] ?? '';
+  record['heartbeat_extra'] = heartbeats.slice(3).join(EXTRA_SEPARATOR);
 
   const livesArea = get(FIELD.LIVES_AREA);
   const areaPrefix = AREA_PREFIX[livesArea] ?? livesArea;

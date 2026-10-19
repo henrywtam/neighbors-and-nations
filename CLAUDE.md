@@ -30,7 +30,9 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 
 ### Responses Tab Columns
 
-`person_id`, `submitted_at`, `is_test`, `vocation_1..3`, `heartbeat_1..3`, `connect_1..3_place`, `connect_1..3_city`, `connect_where_i_live`, `lives_area`, `lives_place`, `submission_id`, `email_key`
+`person_id`, `submitted_at`, `is_test`, `vocation_1..3`, `heartbeat_1..3`, `connect_1..3_place`, `connect_1..3_city`, `connect_where_i_live`, `lives_area`, `lives_place`, `submission_id`, `email_key`, `vocation_extra`, `heartbeat_extra`
+
+The form asks for up to 3 vocations/heartbeats but Planning Center can't enforce it, so nothing is dropped: picks 4+ go into `*_extra`, joined with ` | `, and are counted like the others.
 
 `submission_id` (Planning Center form submission ID) and `email_key` (first 16 hex chars of SHA-256 of the person's lowercased primary email — the address itself is never stored) were added later; their header cells are written on startup if missing. Older rows have neither: sync dedups them by `person_id|submitted_at`, and the processor links them to an `email_key` via `person_id`.
 
