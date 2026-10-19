@@ -806,7 +806,7 @@ function renderOceanLeaderboards(state) {
     const items = Object.entries((state && state.countryPicks) || {})
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .slice(0, 7);
     cEl.style.display = items.length === 0 ? 'none' : '';
     cEl.innerHTML = renderOceanCard('Top Countries', items);
   }
