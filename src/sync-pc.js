@@ -2,14 +2,18 @@
  * sync-pc.js
  *
  * Callable module: syncs new Planning Center form submissions into the
- * Google Sheets "Responses" tab. Called by the polling loop in index.js.
+ * Google Sheets "Responses" tab. Triggered by the Planning Center webhook
+ * (or the fallback poll) in index.js.
+ *
+ * Append-only: existing rows are never cleared or rewritten. Only writes to
+ * the Sheet when there is at least one new submission, then updates Meta.
  *
  * The standalone script at scripts/sync-from-pc.js is kept for manual use
  * but delegates to this module.
  */
 
-import { readSheet, appendRows, writeUnmatched } from './sheets.js';
-import { getSubmissionsWithValues } from './planningcenter.js';
+import { appendRows, writeUnmatched, writeMeta } from './sheets.js';
+import { getFormSubmissions, getSubmissionDetails } from './planningcenter.js';
 import { lookupCityGlobal, countryNameToCode } from './geonames.js';
 import { normalizeCountryName } from './processor.js';
 
@@ -47,7 +51,7 @@ const AREA_CITY_FIELD = {
   'South Bay':     FIELD.CITY_SOUTH_BAY,
 };
 
-const SHEET_COLUMNS = [
+export const SHEET_COLUMNS = [
   'person_id', 'submitted_at', 'is_test',
   'vocation_1', 'vocation_2', 'vocation_3',
   'heartbeat_1', 'heartbeat_2', 'heartbeat_3',
@@ -56,13 +60,14 @@ const SHEET_COLUMNS = [
   'connect_3_place', 'connect_3_city',
   'connect_where_i_live',
   'lives_area', 'lives_place',
+  'submission_id',
 ];
 
 // ---------------------------------------------------------------------------
 // Row mapper (identical logic to scripts/sync-from-pc.js)
 // ---------------------------------------------------------------------------
 
-function mapToRow(sub, unmatchedItems = []) {
+export function mapToRow(sub, unmatchedItems = [], columns = SHEET_COLUMNS) {
   const v = sub.values;
   const get = id => v.get(id)?.[0] ?? '';
   const getAll = id => v.get(id) ?? [];
@@ -70,6 +75,7 @@ function mapToRow(sub, unmatchedItems = []) {
 
   record['person_id']    = String(sub.person_id ?? sub.id ?? '');
   record['submitted_at'] = sub.created_at ?? '';
+  record['submission_id'] = String(sub.id ?? '');
   record['is_test']      = (sub.emails ?? []).some(e => e.endsWith('@mac.com')) ? 'TRUE' : 'FALSE';
 
   const vocations = getAll(FIELD.VOCATIONS).slice(0, 3);
@@ -132,50 +138,69 @@ function mapToRow(sub, unmatchedItems = []) {
     record[p.cityCol]  = placeCityValue;
   }
 
-  return SHEET_COLUMNS.map(col => record[col] ?? '');
+  return columns.map(col => record[col] ?? '');
 }
 
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
+// Re-list this far back before last_synced_at to catch submissions that land
+// slightly out of order. Listing is one request; known IDs are skipped before
+// any per-submission detail requests.
+const LOOKBACK_MS = 60 * 60 * 1000;
+
 /**
  * Pull new Planning Center submissions and append them to Sheets.
  *
  * @param {string} sheetId
- * @returns {Promise<{newCount: number, unmatchedCount: number}>}
+ * @param {ReturnType<import('./sheet-cache.js').createSheetCache>} cache
+ *   Initialised sheet cache — provides known submission keys and Meta.
+ * @param {{full?: boolean, dryRun?: boolean}} [opts]
+ *   full: ignore last_synced_at and list every submission (still deduped).
+ *   dryRun: return the rows that would be written without writing anything.
+ * @returns {Promise<{newCount: number, unmatchedCount: number, rows?: string[][], unmatchedItems?: object[]}>}
  */
-export async function syncPlanningCenter(sheetId) {
-  const sheetData = await readSheet(sheetId);
-  const existingIds = new Set(
-    sheetData.responses.map(r => String(r.person_id ?? '').trim()).filter(Boolean),
-  );
+export async function syncPlanningCenter(sheetId, cache, { full = false, dryRun = false } = {}) {
+  const meta = cache.meta;
+  const since = !full && meta?.last_synced_at
+    ? new Date(Date.parse(meta.last_synced_at) - LOOKBACK_MS)
+    : null;
 
-  // Look back 1h from the most-recent submission to catch stragglers
-  let since = null;
-  if (sheetData.responses.length > 0) {
-    const dates = sheetData.responses
-      .map(r => r.submitted_at ? new Date(r.submitted_at) : null)
-      .filter(Boolean);
-    if (dates.length > 0) {
-      since = new Date(Math.max(...dates.map(d => d.getTime())) - 60 * 60 * 1000);
-    }
-  }
+  const listed = await getFormSubmissions(FORM_ID, since);
+  const fresh = listed.filter(sub => !cache.has({
+    submissionId: sub.id,
+    personId: sub.person_id ?? sub.id,
+    submittedAt: sub.created_at,
+  }));
 
-  const submissions = await getSubmissionsWithValues(FORM_ID, since);
-  const newSubmissions = submissions.filter(sub => {
-    const pid = String(sub.person_id ?? sub.id ?? '').trim();
-    return pid && !existingIds.has(pid);
-  });
-
-  if (newSubmissions.length === 0) {
+  if (fresh.length === 0) {
     return { newCount: 0, unmatchedCount: 0 };
   }
 
-  const unmatchedItems = [];
-  const rows = newSubmissions.map(sub => mapToRow(sub, unmatchedItems));
+  fresh.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+  const newSubmissions = await getSubmissionDetails(fresh);
 
-  await appendRows(sheetId, 'Responses', rows);
+  const unmatchedItems = [];
+  const columns = cache.header.length ? cache.header : SHEET_COLUMNS;
+  const rows = newSubmissions.map(sub => mapToRow(sub, unmatchedItems, columns));
+
+  if (dryRun) {
+    return { newCount: rows.length, unmatchedCount: unmatchedItems.length, rows, unmatchedItems };
+  }
+
+  const { lastRow } = await appendRows(sheetId, 'Responses', rows);
+
+  const latest = newSubmissions[newSubmissions.length - 1];
+  const prevSynced = meta?.last_synced_at ? Date.parse(meta.last_synced_at) : 0;
+  await writeMeta(sheetId, {
+    last_synced_at: Date.parse(latest.created_at) > prevSynced ? latest.created_at : meta.last_synced_at,
+    last_submission_id: latest.id,
+    // lastRow is the sheet row of the final appended row; row 1 is the header
+    row_count: lastRow ? lastRow - 1 : (meta?.row_count ?? 0) + rows.length,
+    last_updated: new Date().toISOString(),
+  });
+
   if (unmatchedItems.length > 0) {
     await writeUnmatched(sheetId, unmatchedItems);
   }

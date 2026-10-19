@@ -171,8 +171,10 @@ function setupSSE() {
   evtSource.onmessage = (e) => {
     let msg;
     try { msg = JSON.parse(e.data); } catch { return; }
+    // Server pushes only when data changes; between pushes the cached state stays on screen
     if (msg.type === 'state') handleStateMessage(msg);
     if (msg.type === 'error') showReconnecting();
+    if (msg.type === 'live') showLive();
   };
   evtSource.onerror = () => showReconnecting();
   evtSource.onopen = () => showLive();

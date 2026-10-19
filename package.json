@@ -5,11 +5,12 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node --test test/processor.test.js",
+    "test": "node --test test/*.test.js",
     "seed": "node scripts/seed-sheet.js",
     "stream": "node scripts/stream-rows.js",
     "inspect-pc": "node scripts/inspect-pc-form.js",
-    "sync-pc": "node scripts/sync-from-pc.js"
+    "sync-pc": "node scripts/sync-from-pc.js",
+    "pc-webhook": "node scripts/create-pc-webhook.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

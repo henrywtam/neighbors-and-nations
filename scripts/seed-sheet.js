@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { google } from 'googleapis';
+import { writeMeta } from '../src/sheets.js';
 
 // ---------------------------------------------------------------------------
 // Value pools
@@ -353,6 +354,14 @@ async function main() {
     range: 'Responses!A1',
     valueInputOption: 'RAW',
     requestBody: { values },
+  });
+
+  // Reset Meta to match the rewritten tab (empty last_synced_at → next PC sync lists all)
+  await writeMeta(sheetId, {
+    last_synced_at: '',
+    last_submission_id: '',
+    row_count: rows.length,
+    last_updated: new Date().toISOString(),
   });
 
   console.log(`[seed] Wrote ${rows.length} rows to Responses tab.`);

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { google } from 'googleapis';
+import { readMeta, writeMeta } from '../src/sheets.js';
 
 const SF_NEIGHBORHOODS = ['Mission', 'Sunset', 'Richmond', 'SOMA', 'Castro', 'Haight', 'Noe Valley'];
 const BAY_PREFIXES = ['East Bay', 'North Bay', 'South Bay', 'Peninsula'];
@@ -113,13 +114,17 @@ async function main() {
     const values = [HEADERS.map(h => row[h] ?? '')];
 
     try {
-      await sheets.spreadsheets.values.append({
+      const res = await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
         range: 'Responses',
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values },
       });
+      // Bump Meta so the server's 30s check notices the new row
+      const lastRow = parseInt(res.data.updates?.updatedRange?.match(/(\d+)$/)?.[1] ?? '0');
+      const meta = (await readMeta(sheetId)) ?? {};
+      await writeMeta(sheetId, { ...meta, row_count: lastRow - 1, last_updated: new Date().toISOString() });
       console.log(`[stream] Appended: pid=${row.person_id} place="${row.connect_1_place}" city="${row.connect_1_city}"`);
     } catch (err) {
       console.error('[stream] Append failed:', err.message);

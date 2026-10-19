@@ -206,8 +206,18 @@ export async function getSubmissionValues(formId, submissionId) {
  * @returns {Promise<Array<{id, person_id, created_at, values: Map<string,string[]>}>>}
  */
 export async function getSubmissionsWithValues(formId, since = null) {
-  const submissions = await getFormSubmissions(formId, since);
+  return getSubmissionDetails(await getFormSubmissions(formId, since));
+}
 
+/**
+ * Resolve field values + person emails for already-listed submissions.
+ * Callers should filter out known submissions first — this costs two API
+ * requests per submission.
+ *
+ * @param {Array<{id, formId, person_id, created_at}>} submissions
+ * @returns {Promise<Array<{id, person_id, created_at, values: Map<string,string[]>, emails: string[]}>>}
+ */
+export async function getSubmissionDetails(submissions) {
   // Fetch values + person emails for each submission (parallel, 5 at a time)
   const CONCURRENCY = 5;
   const results = [];
