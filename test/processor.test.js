@@ -125,6 +125,16 @@ test('picks beyond the third (vocation_extra) are all counted', () => {
   }
 });
 
+test('SF "Other:" write-in resolves to its map neighborhood', () => {
+  const rows = [
+    makeRow({ person_id: 'P1', lives_area: 'SF', lives_place: 'SF: Other: South Beach' }),
+    makeRow({ person_id: 'P2', lives_area: 'SF', lives_place: 'SF: Other: Presidio Heights' }),
+  ];
+  const state = processResponses(makeSheetData({ responses: rows }), defaultConfig, mockGeonames);
+  assert.equal(state.sfNeighborhoodCounts['Financial District/South Beach'], 1);
+  assert.equal(state.sfNeighborhoodCounts['Presidio Heights'], 1);
+});
+
 // 2. is_test exclusion
 test('is_test=TRUE row excluded when showTestRows=false', () => {
   const testRow = makeRow({ is_test: 'TRUE' });

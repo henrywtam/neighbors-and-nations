@@ -12,12 +12,15 @@
 // ---------------------------------------------------------------------------
 let shapeNameToCountry = {};
 let isoNumToCountry = {};
+let alpha2ToCountry = {};
 
 function buildCountryLookups(countries) {
   shapeNameToCountry = {};
   isoNumToCountry = {};
+  alpha2ToCountry = {};
   for (const c of countries) {
     if (c.num) isoNumToCountry[c.num] = c.name;
+    if (c.alpha2) alpha2ToCountry[c.alpha2] = c.name;
     for (const shape of c.shapes || []) shapeNameToCountry[shape] = c.name;
   }
 }
@@ -48,6 +51,7 @@ const OCEAN_LB_POSITIONS = {
 const SF_GEO_TO_CANONICAL = {
   'West of Twin Peaks':  'West Portal/Forest Hill',
   'Lone Mountain/USF':   'Lone Mountain/NOPA',
+  'Outer Mission':       'Mission',  // not in the form dropdown; glows with Mission
 };
 
 // Manual label position offsets [dx, dy] in SVG pixels for awkward centroids.
@@ -222,7 +226,10 @@ async function loadTopo() {
     buildCountryLookups(await countriesRes.json());
     countryFeatures = topojson.feature(topoData, topoData.objects.countries).features;
     initMap();
-    if (currentState) renderMap(currentState, null);
+    if (currentState) {
+      renderMap(currentState, null);
+      renderLeaderboard(currentState); // city labels need country names
+    }
   } catch (e) {
     console.error('[world] Failed to load topo:', e);
   }
@@ -661,6 +668,9 @@ function renderPlacesList(state, total) {
   if (sfBayCount > 0) {
     items.push({ name: 'SF & Bay Area', count: sfBayCount, type: 'sfbay' });
   }
+  for (const c of state.cityPicks || []) {
+    items.push({ name: cityLabel(c), count: c.count || 0, type: 'city' });
+  }
 
   items.sort((a, b) => b.count - a.count);
   const top = items.slice(0, 10);
@@ -673,8 +683,15 @@ function renderPlacesList(state, total) {
     for (const [n, c] of Object.entries(previousState.regionPicks || {})) prevCounts[n] = c;
     const prevSfBay = previousState.sfBayCount || 0;
     if (prevSfBay > 0) prevCounts['SF & Bay Area'] = prevSfBay;
+    for (const c of previousState.cityPicks || []) prevCounts[cityLabel(c)] = c.count || 0;
   }
   renderRankedList(list, top, total, maxCount, prevCounts);
+}
+
+/** "Shanghai, China" — the country suffix also keeps cities distinct from same-named countries. */
+function cityLabel(c) {
+  const country = alpha2ToCountry[c.countryCode];
+  return country ? `${c.name}, ${country}` : c.name;
 }
 
 function renderHeartbeatList(state, total) {
@@ -990,8 +1007,17 @@ function renderSfMap(state) {
   }
 
   // Pass 2: draw all labels on top of borders
+  // Label each canonical name once, on the polygon that carries that exact
+  // name when there is one (e.g. "Mission" on Mission, not Outer Mission)
   const labeledCanonical = new Set();
-  for (const feature of features) {
+  const labelOrder = [...features].sort((a, b) => {
+    const exact = f => {
+      const n = f.properties[sfNbhdNameKey] ?? '';
+      return (SF_GEO_TO_CANONICAL[n] ?? n) === n ? 0 : 1;
+    };
+    return exact(a) - exact(b);
+  });
+  for (const feature of labelOrder) {
     const geoName   = feature.properties[sfNbhdNameKey] ?? '';
     const canonical = SF_GEO_TO_CANONICAL[geoName] ?? geoName;
     const count     = Number(sfCounts[canonical] || 0);

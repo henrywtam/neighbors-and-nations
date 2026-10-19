@@ -423,6 +423,10 @@ html, body {
   color: #fde68a;
 }
 
+.lb-name.type-city {
+  color: rgba(255, 220, 130, 0.85);
+}
+
 .lb-meta {
   display: flex;
   flex-direction: column;
@@ -465,6 +469,10 @@ html, body {
 
 .lb-row.type-sfbay .lb-bar {
   background: #fde68a;
+}
+
+.lb-row.type-city .lb-bar {
+  background: rgba(255, 220, 130, 0.7);
 }
 
 /* ============================================================

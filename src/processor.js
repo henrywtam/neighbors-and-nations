@@ -504,9 +504,16 @@ const SF_NBHD_ALIASES = {
   'forest hill':                    'West Portal/Forest Hill',
   // South of Market
   'soma':                           'South of Market',
+  // Financial District/South Beach — not in the form dropdown, so arrives as "Other"
+  'south beach':                    'Financial District/South Beach',
+  'financial district':             'Financial District/South Beach',
+  'fidi':                           'Financial District/South Beach',
+  'rincon hill':                    'Financial District/South Beach',
+  'embarcadero':                    'Financial District/South Beach',
   // Mission
   'the mission':                    'Mission',
   'mission district':               'Mission',
+  'outer mission':                  'Mission',  // map glows Outer Mission with Mission
   // Haight
   'haight':                         'Haight Ashbury',
   'haight-ashbury':                 'Haight Ashbury',
@@ -524,5 +531,7 @@ const SF_NBHD_ALIASES = {
 };
 
 function normalizeSfNeighborhood(name) {
-  return SF_NBHD_ALIASES[name.toLowerCase()] ?? name;
+  // Write-ins arrive as "Other: <typed text>"
+  const typed = name.replace(/^other:\s*/i, '').trim();
+  return SF_NBHD_ALIASES[typed.toLowerCase()] ?? typed;
 }
