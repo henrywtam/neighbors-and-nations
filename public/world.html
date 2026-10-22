@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RealitySF Global Discovery: Our Connected World</title>
+  <title>Neighbors &amp; Nations — RealitySF</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -21,13 +21,18 @@
       <!-- Map panel (75%) -->
       <div id="map-panel">
         <div id="map-header">
-          <div id="map-title">RealitySF Global Discovery: Our Connected World</div>
-          <div id="map-subtitle">The Global Heartbeat &mdash; Our Congregation at RealitySF</div>
+          <div id="map-eyebrow">RealitySF Global Discovery</div>
+          <div id="map-title">Neighbors &amp; Nations</div>
+          <div id="map-subtitle">Mercy makes us neighbors</div>
           <div id="people-counter">
             <span class="count-number" id="people-count">0</span>
             <span> people have shared their heart</span>
           </div>
         </div>
+        <a id="survey-qr" href="https://realitysf.churchcenter.com/people/forms/1335453" target="_blank" rel="noopener">
+          <img src="/assets/survey-qr.png" alt="QR code for the Neighbors &amp; Nations survey">
+          <span class="survey-qr-label">Scan to share your heart</span>
+        </a>
         <div id="map-svg-wrap">
           <div id="live-indicator">
             <div id="live-dot"></div>
@@ -40,7 +45,8 @@
           <div class="ocean-lb" id="olb-cities" data-lb-type="cities"></div>
           <div class="ocean-lb" id="olb-regions" data-lb-type="regions"></div>
         </div>
-        <div id="map-attribution">City data: GeoNames</div>
+        <!-- Top heartbeats: footer row of the map panel -->
+        <div id="heartbeat-band"></div>
       </div>
 
       <!-- Leaderboard panel (25%) -->

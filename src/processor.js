@@ -333,9 +333,6 @@ export function processResponses(sheetData, config, geonames) {
   for (const [name, count] of regionPicks) {
     topPlacesRaw.push({ name, type: 'region', count, pct: totalPeople > 0 ? (count / totalPeople) * 100 : 0 });
   }
-  if (sfBayCount > 0) {
-    topPlacesRaw.push({ name: 'SF / Bay Area', type: 'sfbay', count: sfBayCount, pct: totalPeople > 0 ? (sfBayCount / totalPeople) * 100 : 0 });
-  }
 
   topPlacesRaw.sort((a, b) => b.count - a.count);
   const topPlaces = topPlacesRaw.slice(0, 20);

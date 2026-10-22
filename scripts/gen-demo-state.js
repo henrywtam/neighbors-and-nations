@@ -21,12 +21,12 @@ const REGION_COUNTRIES = {
   'Latin America': ['Nicaragua','Brazil','Colombia','Argentina','Peru','Chile','Bolivia','Ecuador','Venezuela','Guatemala','Honduras','El Salvador','Costa Rica','Panama','Cuba','Haiti','Dominican Republic','Jamaica','Mexico'],
   'Africa': ['Kenya','Uganda','Ethiopia','Nigeria','Ghana','Tanzania','Rwanda','Zambia','Zimbabwe','Mozambique','Madagascar','Senegal','South Africa','Egypt','Morocco','Angola','Cameroon','Democratic Republic of Congo'],
   'Middle East': ['Israel','Jordan','Lebanon','Iraq','Iran','Saudi Arabia','Syria'],
-  'Europe': ['Germany','France','United Kingdom','Spain','Italy','Portugal','Netherlands','Belgium','Sweden','Norway','Denmark','Finland','Switzerland','Austria','Poland','Ukraine'],
-  'South Asia': ['India','Bangladesh','Pakistan','Sri Lanka','Nepal','Afghanistan'],
-  'Central Asia': [],
-  'East Asia': ['China','Japan','South Korea'],
-  'Southeast Asia': ['Thailand','Philippines','Vietnam','Cambodia','Myanmar','Malaysia','Singapore','Indonesia','Laos'],
+  'Western Europe': ['Germany','France','United Kingdom','Spain','Italy','Portugal','Netherlands','Belgium','Sweden','Norway','Denmark','Finland','Switzerland','Austria'],
+  'Eastern Europe & Russia': ['Poland','Ukraine','Romania','Russia'],
+  'South & Central Asia': ['India','Bangladesh','Pakistan','Sri Lanka','Nepal','Afghanistan','Kazakhstan','Uzbekistan'],
+  'East & Southeast Asia': ['China','Japan','South Korea','Thailand','Philippines','Vietnam','Cambodia','Myanmar','Malaysia','Singapore','Indonesia','Laos'],
   'Pacific / Oceania': ['Australia','New Zealand'],
+  'North America': ['United States','Canada'],
 };
 
 const countryPicks = {
@@ -62,17 +62,20 @@ const countryPicks = {
   'Australia': 1,
 };
 
+// Region names match the form's Region dropdown options exactly
 const regionPicks = {
-  'Southeast Asia': 14,
+  'East & Southeast Asia': 19,
   'Middle East': 12,
   'Africa': 10,
   'Latin America': 8,
-  'East Asia': 5,
-  'South Asia': 4,
-  'Europe': 3,
+  'South & Central Asia': 4,
+  'Western Europe': 3,
+  'Eastern Europe & Russia': 2,
+  'Pacific / Oceania': 2,
+  'North America': 2,
 };
 
-const sfBayCount = 58;
+const sfBayCount = 0;
 const totalPeople = 247;
 
 const cityPicks = [
@@ -130,12 +133,11 @@ const vocationCounts = {
 };
 
 const topPlaces = [
-  { name: 'SF / Bay Area',  type: 'sfbay',   count: 58, pct: 23.5 },
   { name: 'Thailand',       type: 'country', count: 47, pct: 19.0 },
   { name: 'Kenya',          type: 'country', count: 38, pct: 15.4 },
   { name: 'Philippines',    type: 'country', count: 35, pct: 14.2 },
   { name: 'Nicaragua',      type: 'country', count: 28, pct: 11.3 },
-  { name: 'Southeast Asia', type: 'region',  count: 14, pct: 5.7  },
+  { name: 'East & Southeast Asia', type: 'region', count: 19, pct: 7.7 },
   { name: 'Uganda',         type: 'country', count: 26, pct: 10.5 },
   { name: 'Middle East',    type: 'region',  count: 12, pct: 4.9  },
   { name: 'Africa',         type: 'region',  count: 10, pct: 4.0  },
@@ -143,11 +145,10 @@ const topPlaces = [
   { name: 'Latin America',  type: 'region',  count: 8,  pct: 3.2  },
   { name: 'India',          type: 'country', count: 10, pct: 4.0  },
   { name: 'Japan',          type: 'country', count: 8,  pct: 3.2  },
-  { name: 'East Asia',      type: 'region',  count: 5,  pct: 2.0  },
   { name: 'Germany',        type: 'country', count: 7,  pct: 2.8  },
   { name: 'Colombia',       type: 'country', count: 6,  pct: 2.4  },
-  { name: 'South Asia',     type: 'region',  count: 4,  pct: 1.6  },
-  { name: 'Europe',         type: 'region',  count: 3,  pct: 1.2  },
+  { name: 'South & Central Asia', type: 'region', count: 4, pct: 1.6 },
+  { name: 'Western Europe', type: 'region',  count: 3,  pct: 1.2  },
   { name: 'South Korea',    type: 'country', count: 5,  pct: 2.0  },
   { name: 'Israel',         type: 'country', count: 4,  pct: 1.6  },
 ];

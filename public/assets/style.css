@@ -15,9 +15,17 @@
   --amber-dim: #c47f10;
   --amber-glow: rgba(255, 160, 30, 0.6);
   --teal: #00e5c8;
+  /* place-type colours, shared by map + sidebar: countries amber, cities cyan, regions lavender */
+  --city: #3de8ff;
+  --region: #b48cff;
+  --heart: #ff6b8b;
+  --vocation: #34d399;
   --white: #ffffff;
   --white-dim: rgba(255, 255, 255, 0.55);
   --border: rgba(255, 255, 255, 0.08);
+  /* survey QR code: image width + white quiet-zone padding */
+  --qr-size: clamp(120px, 9vw, 240px);
+  --qr-pad: clamp(10px, 0.8vw, 20px);
 }
 
 html, body {
@@ -52,13 +60,24 @@ html, body {
 
 #map-header {
   flex: 0 0 auto;
-  padding: 18px 28px 10px 28px;
+  /* side padding keeps the centred title clear of the QR code (both sides, so it stays centred) */
+  padding: 18px calc(var(--qr-size) + 2 * var(--qr-pad) + 40px) 10px;
   text-align: center;
   position: relative;
 }
 
+#map-eyebrow {
+  font-size: clamp(11px, 0.8vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--white-dim);
+  margin-bottom: 2px;
+}
+
 #map-title {
-  font-size: 32px;
+  text-wrap: balance;
+  font-size: clamp(36px, 3vw, 84px);
   font-weight: 800;
   color: var(--white);
   letter-spacing: 0.03em;
@@ -67,21 +86,22 @@ html, body {
 }
 
 #map-subtitle {
-  font-size: 18px;
-  font-weight: 400;
+  font-size: clamp(18px, 1.45vw, 40px);
+  font-weight: 500;
+  font-style: italic;
   color: var(--amber);
-  margin-top: 4px;
+  margin-top: 2px;
   letter-spacing: 0.04em;
 }
 
 #people-counter {
   margin-top: 8px;
-  font-size: 22px;
+  font-size: clamp(18px, 1.3vw, 36px);
   color: var(--white-dim);
 }
 
 #people-counter .count-number {
-  font-size: 36px;
+  font-size: clamp(32px, 2.4vw, 68px);
   font-weight: 700;
   color: var(--amber);
   text-shadow: 0 0 16px var(--amber-glow), 0 0 32px rgba(255, 160, 30, 0.4);
@@ -130,6 +150,37 @@ html, body {
   color: rgba(255, 255, 255, 0.35);
 }
 
+/* Survey QR code — top-right corner of the map panel, sized for a room-scale screen */
+#survey-qr {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+#survey-qr img {
+  width: var(--qr-size);
+  height: auto;
+  display: block;
+  /* white quiet zone so phones can find the code */
+  padding: var(--qr-pad);
+  background: #fff;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+
+.survey-qr-label {
+  font-size: clamp(12px, 0.85vw, 20px);
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+}
+
 #map-svg-wrap {
   flex: 1 1 auto;
   overflow: hidden;
@@ -140,15 +191,6 @@ html, body {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-#map-attribution {
-  position: absolute;
-  bottom: 8px;
-  left: 16px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.2);
-  pointer-events: none;
 }
 
 #sf-attribution {
@@ -189,27 +231,36 @@ html, body {
 
 .graticule {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.04);
+  stroke: rgba(160, 200, 255, 0.08);
   stroke-width: 0.5;
 }
 
+/* Ocean: a clearly lighter blue than the page background, with a soft rim
+   so the globe's edge reads from across the room */
 .sphere {
-  fill: #06111f;
+  fill: #123a66;
+  stroke: rgba(120, 180, 255, 0.45);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 18px rgba(60, 140, 255, 0.25));
 }
 
+/* City dots: cyan with a dark ring — contrasts with both the amber land
+   and the blue ocean */
 .city-dot {
-  fill: rgba(255, 255, 255, 0.95);
-  stroke: rgba(10, 20, 40, 0.8);
-  stroke-width: 1;
+  fill: var(--city);
+  stroke: rgba(20, 6, 16, 0.9);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 4px var(--city));
   cursor: default;
 }
+
 
 .region-outline {
   pointer-events: none;
 }
 
 .region-label-text {
-  fill: var(--teal);
+  fill: var(--region);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -218,7 +269,7 @@ html, body {
 }
 
 .region-label-count {
-  fill: var(--teal);
+  fill: var(--region);
   font-size: 11px;
   font-weight: 400;
   pointer-events: none;
@@ -228,59 +279,70 @@ html, body {
    Ocean leaderboard cards
    ============================================================ */
 
+/* Cards scale with the drawn map, not the window: they're pinned to ocean
+   positions, so keeping them a fixed fraction of the map means they fit the same
+   way on every screen. The map is fitted to the wrap, so its drawn width is the
+   wrap width or ~1.95x the wrap height, whichever is smaller (Natural Earth aspect). */
+#map-svg-wrap {
+  container-type: size;
+}
+
 .ocean-lb {
+  --map-w: min(100cqw, 195cqh);
   position: absolute;
   z-index: 5;
-  background: rgba(6, 17, 31, 0.80);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 6px;
-  padding: 9px 13px;
-  min-width: 130px;
-  max-width: 185px;
+  font-size: clamp(10px, calc(var(--map-w) * 0.0105), 40px);
+  background: rgba(6, 17, 31, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5em;
+  padding: 0.7em 0.95em;
+  min-width: 9em;
+  max-width: 13em;
   pointer-events: none;
   transform: translate(-50%, -50%);
   backdrop-filter: blur(2px);
 }
 
 .ocean-lb-title {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 0.95em;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--amber-dim);
-  margin-bottom: 7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 5px;
+  color: var(--amber);
+  margin-bottom: 0.45em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.35em;
 }
 
 .ocean-lb[data-lb-type="regions"] .ocean-lb-title {
-  color: var(--teal);
+  color: var(--region);
 }
 
-.ocean-lb[data-lb-type="cities"] .ocean-lb-title {
-  color: rgba(255, 220, 130, 0.7);
+.ocean-lb[data-lb-type="cities"] .ocean-lb-title,
+.ocean-lb[data-lb-type="cities"] .ocean-lb-count {
+  color: var(--city);
 }
 
 .ocean-lb-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 0;
+  gap: 0.45em;
+  padding: 0.12em 0;
 }
 
 .ocean-lb-rank {
-  font-size: 9px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.25);
-  width: 12px;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  width: 1.1em;
   text-align: right;
   flex-shrink: 0;
 }
 
 .ocean-lb-name {
   flex: 1;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -288,14 +350,118 @@ html, body {
 }
 
 .ocean-lb-count {
-  font-size: 12px;
+  font-size: 1em;
   font-weight: 700;
   color: var(--amber);
   flex-shrink: 0;
 }
 
 .ocean-lb[data-lb-type="regions"] .ocean-lb-count {
-  color: var(--teal);
+  color: var(--region);
+}
+
+/* ============================================================
+   Top heartbeats band — footer row of the map panel
+   Sized so the longest option ("Poverty & Economic Opportunity") fits in
+   two lines without truncation.
+   ============================================================ */
+
+#heartbeat-band {
+  flex: 0 0 auto;
+  /* breathing room between the bottom of the map and the band */
+  margin-top: clamp(8px, 1.2vh, 24px);
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 1.6vw, 40px);
+  padding: clamp(12px, 1vw, 26px) clamp(18px, 1.6vw, 40px);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--heart) 9%, var(--navy-panel)), var(--navy));
+  border-top: 2px solid color-mix(in srgb, var(--heart) 55%, transparent);
+  box-shadow: 0 -8px 30px color-mix(in srgb, var(--heart) 10%, transparent);
+}
+
+.hb-title {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* two short lines: "What's on" / "our heart" */
+  max-width: 7.5em;
+  line-height: 1.15;
+  padding-right: clamp(16px, 1.6vw, 40px);
+  border-right: 1px solid color-mix(in srgb, var(--heart) 35%, transparent);
+  font-size: clamp(12px, 0.85vw, 24px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--heart);
+}
+
+/* Items take only the width they need and the leftover space is shared
+   evenly between them, so short names don't leave gaps after them */
+.hb-items {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: clamp(10px, 1vw, 26px);
+}
+
+.hb-item {
+  flex: 0 1 auto;
+  max-width: 20%;
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.5vw, 14px);
+  min-width: 0;
+}
+
+/* Rank badge: number inside a heart, shrinking from #1 to #5 */
+.hb-rank {
+  --hs: max(23px, 1.75vw);
+  flex: 0 0 auto;
+  position: relative;
+  width: var(--hs);
+  height: calc(var(--hs) * 0.92);
+  display: grid;
+  place-items: center;
+}
+
+.hb-rank svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--heart);
+}
+
+.hb-rank span {
+  position: relative;
+  /* the heart's visual centre sits above its box centre */
+  transform: translateY(-10%);
+  font-size: calc(var(--hs) * 0.42);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--navy);
+}
+
+/* sized as a share of screen width (no upper cap), so they keep the same
+   proportions on a laptop, a 1080p TV or a 4K TV */
+.hb-item--r1 .hb-rank { --hs: max(30px, 2.4vw); }
+.hb-item--r1 .hb-rank svg { filter: drop-shadow(0 0 8px var(--heart)); }
+.hb-item--r2 .hb-rank { --hs: max(27px, 2.1vw); }
+.hb-item--r3 .hb-rank { --hs: max(25px, 1.9vw); }
+.hb-item--r4 .hb-rank { --hs: max(23px, 1.75vw); }
+.hb-item--r5 .hb-rank { --hs: max(21px, 1.6vw); }
+
+.hb-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(12px, 0.95vw, 28px);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 /* ============================================================
@@ -320,7 +486,7 @@ html, body {
 }
 
 #leaderboard-title {
-  font-size: 20px;
+  font-size: clamp(22px, 1.6vw, 44px);
   font-weight: 700;
   color: var(--white);
   letter-spacing: 0.04em;
@@ -329,14 +495,14 @@ html, body {
 
 #leaderboard-total {
   margin-top: 6px;
-  font-size: 14px;
+  font-size: clamp(14px, 1vw, 26px);
   color: var(--white-dim);
 }
 
 #leaderboard-total .lb-total-num {
   color: var(--amber);
   font-weight: 700;
-  font-size: 16px;
+  font-size: clamp(16px, 1.2vw, 32px);
 }
 
 /* Tab navigation */
@@ -349,7 +515,7 @@ html, body {
 .lb-tab {
   flex: 1;
   padding: 10px 4px;
-  font-size: 13px;
+  font-size: clamp(14px, 1vw, 26px);
   font-weight: 600;
   text-align: center;
   color: var(--white-dim);
@@ -361,9 +527,15 @@ html, body {
 }
 
 .lb-tab.active {
-  color: var(--amber);
-  border-bottom-color: var(--amber);
+  color: var(--tab-color);
+  border-bottom-color: var(--tab-color);
 }
+
+/* each tab has its own colour: Places neutral (its rows are coloured by type),
+   Issues rose, Vocations emerald */
+.lb-tab[data-tab="0"] { --tab-color: var(--white); }
+.lb-tab[data-tab="1"] { --tab-color: var(--heart); }
+.lb-tab[data-tab="2"] { --tab-color: var(--vocation); }
 
 /* Tab content */
 #leaderboard-body {
@@ -376,7 +548,9 @@ html, body {
   position: absolute;
   inset: 0;
   padding: 8px 0;
-  overflow-y: auto;
+  /* display screen: no scrollbar — fill the full height, fade out whatever doesn't fit */
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 calc(100% - 60px), transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -388,6 +562,8 @@ html, body {
 }
 
 .lb-row {
+  /* place-type colour: drives name, count, bar and top-3 accents */
+  --row-color: var(--amber);
   display: flex;
   align-items: center;
   padding: 8px 20px;
@@ -395,10 +571,16 @@ html, body {
   position: relative;
 }
 
+.lb-row.type-region { --row-color: var(--region); }
+.lb-row.type-city  { --row-color: var(--city); }
+.lb-row.type-heartbeat { --row-color: var(--heart); }
+.lb-row.type-vocation  { --row-color: var(--vocation); }
+
 .lb-rank {
   font-size: 13px;
   font-weight: 700;
-  color: var(--amber-dim);
+  color: var(--row-color);
+  opacity: 0.75;
   width: 22px;
   flex-shrink: 0;
   text-align: right;
@@ -415,16 +597,10 @@ html, body {
   min-width: 0;
 }
 
-.lb-name.type-region {
-  color: var(--teal);
-}
-
-.lb-name.type-sfbay {
-  color: #fde68a;
-}
-
+.lb-name.type-country,
+.lb-name.type-region,
 .lb-name.type-city {
-  color: rgba(255, 220, 130, 0.85);
+  color: var(--row-color);
 }
 
 .lb-meta {
@@ -438,7 +614,7 @@ html, body {
 .lb-count {
   font-size: 18px;
   font-weight: 700;
-  color: var(--amber);
+  color: var(--row-color);
 }
 
 .lb-pct {
@@ -459,20 +635,41 @@ html, body {
 .lb-bar {
   height: 100%;
   border-radius: 1px;
-  background: var(--amber);
+  background: var(--row-color);
   transition: width 0.6s ease;
 }
 
-.lb-row.type-region .lb-bar {
-  background: var(--teal);
+/* Top 3 of each list: bigger type, rank badge, tinted background, thicker bar */
+.lb-row.top3 {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--row-color) 16%, transparent), transparent 85%);
 }
 
-.lb-row.type-sfbay .lb-bar {
-  background: #fde68a;
+.lb-row.top3 .lb-rank {
+  opacity: 1;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 14px;
+  color: var(--navy);
+  background: var(--row-color);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--row-color) 50%, transparent);
 }
 
-.lb-row.type-city .lb-bar {
-  background: rgba(255, 220, 130, 0.7);
+.lb-row.top3 .lb-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lb-row.top3 .lb-count {
+  font-size: 22px;
+}
+
+.lb-row.top3 .lb-bar-wrap {
+  height: 3px;
 }
 
 /* ============================================================

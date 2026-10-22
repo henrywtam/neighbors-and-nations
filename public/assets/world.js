@@ -33,14 +33,21 @@ function countryForFeature(f) {
 
 // ---------------------------------------------------------------------------
 // Ocean leaderboard anchor positions [lon, lat]
-// Cities (left) and Regions (right) share the same latitude so they sit
-// at the same vertical level. Countries sits lower in the South Atlantic.
+// All three share one latitude so the cards sit in a horizontal row just
+// south of the equator. Countries sits in the Atlantic gap between Brazil
+// and Africa, so it's the tightest fit.
 // ---------------------------------------------------------------------------
 const OCEAN_LB_POSITIONS = {
-  'olb-cities':    [-110, -12],  // South Pacific (left)
-  'olb-countries': [-10, -42],   // South Atlantic (centre)
-  'olb-regions':   [82, -12],    // Indian Ocean (right)
+  'olb-cities':    [-112, -20],  // South Pacific (left)
+  'olb-countries': [-12, -20],   // South Atlantic (centre)
+  'olb-regions':   [80, -20],    // Indian Ocean (right)
 };
+
+const OCEAN_LB_SIZE = 5;
+// Heart outline for the heartbeat rank badges (24px icon grid)
+const HEART_PATH = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+// Sidebar lists show everything that fits the screen height; rows past the bottom fade out
+const SIDEBAR_MAX_ROWS = 40;
 
 // ---------------------------------------------------------------------------
 // SF: maps each GeoJSON feature name → canonical name used in sfNeighborhoodCounts.
@@ -141,7 +148,7 @@ let sfNbhdNameKey = 'nhood'; // GeoJSON property key for neighborhood name
 let leaderboardTab = 0; // 0=Places, 1=Heart Issues, 2=Vocations
 let tabRotateTimer = null;
 const TAB_NAMES = ['Places', 'Heart Issues', 'Vocations'];
-const TAB_ROTATE_MS = 8000;
+const TAB_ROTATE_MS = 5000;
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -555,8 +562,11 @@ function renderCities(state, prevState) {
   if (!svg || !projection) return;
 
   const cityPicks = state ? (state.cityPicks || []) : [];
-  const minDotArea = 1;
-  const maxDotArea = 50;
+  // Radius ~3px → ~7px on a 1440px-wide map, scaled with the map so dots stay
+  // visible from across the room on big screens
+  const k = svgWidth / 1440;
+  const minDotArea = Math.PI * (3 * k) ** 2;
+  const maxDotArea = Math.PI * (7 * k) ** 2;
   const maxCityCount = Math.max(1, ...cityPicks.map(c => c.count || 0));
 
   // Build set of previous cities by lat/lng key for new-city detection
@@ -655,7 +665,6 @@ function renderPlacesList(state, total) {
 
   const countryPicks = state.countryPicks || {};
   const regionPicks = state.regionPicks || {};
-  const sfBayCount = state.sfBayCount || 0;
 
   const items = [];
 
@@ -665,15 +674,12 @@ function renderPlacesList(state, total) {
   for (const [name, count] of Object.entries(regionPicks)) {
     items.push({ name, count, type: 'region' });
   }
-  if (sfBayCount > 0) {
-    items.push({ name: 'SF & Bay Area', count: sfBayCount, type: 'sfbay' });
-  }
   for (const c of state.cityPicks || []) {
     items.push({ name: cityLabel(c), count: c.count || 0, type: 'city' });
   }
 
   items.sort((a, b) => b.count - a.count);
-  const top = items.slice(0, 10);
+  const top = items.slice(0, SIDEBAR_MAX_ROWS);
   const maxCount = top.length > 0 ? top[0].count : 1;
 
   let prevCounts = null;
@@ -681,8 +687,6 @@ function renderPlacesList(state, total) {
     prevCounts = {};
     for (const [n, c] of Object.entries(previousState.countryPicks || {})) prevCounts[n] = c;
     for (const [n, c] of Object.entries(previousState.regionPicks || {})) prevCounts[n] = c;
-    const prevSfBay = previousState.sfBayCount || 0;
-    if (prevSfBay > 0) prevCounts['SF & Bay Area'] = prevSfBay;
     for (const c of previousState.cityPicks || []) prevCounts[cityLabel(c)] = c.count || 0;
   }
   renderRankedList(list, top, total, maxCount, prevCounts);
@@ -702,7 +706,7 @@ function renderHeartbeatList(state, total) {
   const items = Object.entries(heartbeatCounts)
     .map(([name, val]) => ({ name, count: val.count || val, type: 'heartbeat' }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+    .slice(0, SIDEBAR_MAX_ROWS);
 
   const maxCount = items.length > 0 ? items[0].count : 1;
   const prevCounts = previousState
@@ -719,7 +723,7 @@ function renderVocationList(state, total) {
   const items = Object.entries(vocationCounts)
     .map(([name, val]) => ({ name, count: val.count || val, type: 'vocation' }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+    .slice(0, SIDEBAR_MAX_ROWS);
 
   const maxCount = items.length > 0 ? items[0].count : 1;
   const prevCounts = previousState
@@ -749,7 +753,7 @@ function renderRankedList(container, items, total, maxCount, prevCounts = null) 
       ? (prevCount === 0 ? 'lb-row--new' : item.count > prevCount ? 'lb-row--flash' : '')
       : '';
     const row = document.createElement('div');
-    row.className = `lb-row type-${item.type}${flashClass ? ' ' + flashClass : ''}`;
+    row.className = `lb-row type-${item.type}${i < 3 ? ' top3' : ''}${flashClass ? ' ' + flashClass : ''}`;
     row.dataset.key = item.name;
 
     row.innerHTML = `
@@ -823,7 +827,7 @@ function renderOceanLeaderboards(state) {
     const items = Object.entries((state && state.countryPicks) || {})
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 7);
+      .slice(0, OCEAN_LB_SIZE);
     cEl.style.display = items.length === 0 ? 'none' : '';
     cEl.innerHTML = renderOceanCard('Top Countries', items);
   }
@@ -834,7 +838,7 @@ function renderOceanLeaderboards(state) {
     const items = ((state && state.cityPicks) || [])
       .slice()
       .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 5)
+      .slice(0, OCEAN_LB_SIZE)
       .map(c => ({ name: c.name, count: c.count }));
     ciEl.style.display = items.length === 0 ? 'none' : '';
     ciEl.innerHTML = renderOceanCard('Top Cities', items);
@@ -843,13 +847,30 @@ function renderOceanLeaderboards(state) {
   // Regions
   const rEl = document.getElementById('olb-regions');
   if (rEl) {
-    const sfBayCount = (state && state.sfBayCount) || 0;
-    const items = [
-      ...Object.entries((state && state.regionPicks) || {}).map(([name, count]) => ({ name, count })),
-      ...(sfBayCount > 0 ? [{ name: 'SF / Bay Area', count: sfBayCount }] : []),
-    ].sort((a, b) => b.count - a.count).slice(0, 5);
+    const items = Object.entries((state && state.regionPicks) || {})
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, OCEAN_LB_SIZE);
     rEl.style.display = items.length === 0 ? 'none' : '';
     rEl.innerHTML = renderOceanCard('Top Regions', items);
+  }
+
+  // Heartbeats band
+  const hEl = document.getElementById('heartbeat-band');
+  if (hEl) {
+    const items = Object.entries((state && state.heartbeatCounts) || {})
+      .map(([name, val]) => ({ name, count: val.count || val }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, OCEAN_LB_SIZE);
+    hEl.style.display = items.length === 0 ? 'none' : '';
+    hEl.innerHTML = `
+      <div class="hb-title">What's on our heart</div>
+      <div class="hb-items">${items.map((item, i) => `
+        <div class="hb-item hb-item--r${i + 1}">
+          <span class="hb-rank"><svg viewBox="2 3 20 18.35" aria-hidden="true"><path d="${HEART_PATH}"/></svg><span>${i + 1}</span></span>
+          <span class="hb-name">${escHtml(item.name)}</span>
+        </div>`).join('')}
+      </div>`;
   }
 }
 

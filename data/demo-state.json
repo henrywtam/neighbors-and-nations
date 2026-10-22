@@ -33,13 +33,15 @@
     "Australia": 1
   },
   "regionPicks": {
-    "Southeast Asia": 14,
+    "East & Southeast Asia": 19,
     "Middle East": 12,
     "Africa": 10,
     "Latin America": 8,
-    "East Asia": 5,
-    "South Asia": 4,
-    "Europe": 3
+    "South & Central Asia": 4,
+    "Western Europe": 3,
+    "Eastern Europe & Russia": 2,
+    "Pacific / Oceania": 2,
+    "North America": 2
   },
   "regionCountries": {
     "Latin America": [
@@ -92,7 +94,7 @@
       "Saudi Arabia",
       "Syria"
     ],
-    "Europe": [
+    "Western Europe": [
       "Germany",
       "France",
       "United Kingdom",
@@ -106,25 +108,28 @@
       "Denmark",
       "Finland",
       "Switzerland",
-      "Austria",
-      "Poland",
-      "Ukraine"
+      "Austria"
     ],
-    "South Asia": [
+    "Eastern Europe & Russia": [
+      "Poland",
+      "Ukraine",
+      "Romania",
+      "Russia"
+    ],
+    "South & Central Asia": [
       "India",
       "Bangladesh",
       "Pakistan",
       "Sri Lanka",
       "Nepal",
-      "Afghanistan"
+      "Afghanistan",
+      "Kazakhstan",
+      "Uzbekistan"
     ],
-    "Central Asia": [],
-    "East Asia": [
+    "East & Southeast Asia": [
       "China",
       "Japan",
-      "South Korea"
-    ],
-    "Southeast Asia": [
+      "South Korea",
       "Thailand",
       "Philippines",
       "Vietnam",
@@ -138,6 +143,10 @@
     "Pacific / Oceania": [
       "Australia",
       "New Zealand"
+    ],
+    "North America": [
+      "United States",
+      "Canada"
     ]
   },
   "cityPicks": [
@@ -296,7 +305,7 @@
       "count": 2
     }
   ],
-  "sfBayCount": 58,
+  "sfBayCount": 0,
   "heartbeatCounts": {
     "Unreached Peoples": {
       "count": 89,
@@ -395,12 +404,6 @@
   },
   "topPlaces": [
     {
-      "name": "SF / Bay Area",
-      "type": "sfbay",
-      "count": 58,
-      "pct": 23.5
-    },
-    {
       "name": "Thailand",
       "type": "country",
       "count": 47,
@@ -425,10 +428,10 @@
       "pct": 11.3
     },
     {
-      "name": "Southeast Asia",
+      "name": "East & Southeast Asia",
       "type": "region",
-      "count": 14,
-      "pct": 5.7
+      "count": 19,
+      "pct": 7.7
     },
     {
       "name": "Uganda",
@@ -473,12 +476,6 @@
       "pct": 3.2
     },
     {
-      "name": "East Asia",
-      "type": "region",
-      "count": 5,
-      "pct": 2
-    },
-    {
       "name": "Germany",
       "type": "country",
       "count": 7,
@@ -491,13 +488,13 @@
       "pct": 2.4
     },
     {
-      "name": "South Asia",
+      "name": "South & Central Asia",
       "type": "region",
       "count": 4,
       "pct": 1.6
     },
     {
-      "name": "Europe",
+      "name": "Western Europe",
       "type": "region",
       "count": 3,
       "pct": 1.2
@@ -531,6 +528,6 @@
   ],
   "invalidRowCount": 8,
   "rowCount": 308,
-  "readAt": "2026-10-01T07:02:32.034Z",
+  "readAt": "2026-10-22T05:32:28.185Z",
   "isLive": true
 }
