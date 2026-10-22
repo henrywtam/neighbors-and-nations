@@ -1,70 +1,106 @@
 {
   "totalPeople": 247,
   "countryPicks": {
-    "Thailand": 47,
-    "Kenya": 38,
-    "Philippines": 35,
-    "Nicaragua": 28,
-    "Uganda": 26,
-    "Brazil": 12,
-    "India": 10,
-    "Japan": 8,
-    "Germany": 7,
-    "Colombia": 6,
-    "South Korea": 5,
-    "Indonesia": 5,
-    "Ethiopia": 4,
-    "Israel": 4,
+    "Vanuatu": 2,
+    "Brazil": 8,
+    "Philippines": 11,
+    "Cambodia": 4,
+    "Côte d'Ivoire": 2,
+    "Israel": 5,
+    "Dominican Republic": 2,
+    "South Korea": 7,
+    "Denmark": 2,
+    "India": 9,
+    "China": 15,
+    "Kenya": 18,
+    "Pakistan": 8,
+    "Mexico": 17,
+    "Algeria": 2,
+    "Nicaragua": 10,
+    "Poland": 2,
+    "Tanzania": 4,
+    "Thailand": 17,
+    "Liberia": 1,
+    "Indonesia": 7,
+    "Canada": 7,
+    "Japan": 5,
+    "Ethiopia": 3,
+    "Egypt": 4,
+    "Papua New Guinea": 1,
+    "France": 4,
+    "El Salvador": 4,
+    "Italy": 2,
+    "Oman": 2,
+    "Niger": 1,
+    "Colombia": 2,
+    "Taiwan": 4,
+    "Guinea": 1,
+    "Solomon Islands": 2,
+    "Peru": 3,
+    "Haiti": 4,
+    "Jordan": 1,
+    "United States": 2,
+    "Germany": 2,
+    "Vietnam": 6,
     "Nigeria": 3,
-    "United Kingdom": 3,
-    "China": 3,
-    "France": 2,
-    "Cambodia": 2,
-    "Myanmar": 2,
-    "Vietnam": 2,
-    "Rwanda": 2,
-    "Peru": 2,
-    "Mexico": 2,
-    "Guatemala": 1,
-    "South Africa": 1,
-    "Nepal": 1,
+    "Greece": 1,
+    "Iran": 2,
+    "Sierra Leone": 2,
+    "Uganda": 8,
+    "Austria": 2,
+    "New Zealand": 1,
+    "North Korea": 2,
+    "Nepal": 2,
+    "Singapore": 1,
+    "South Sudan": 1,
+    "Guatemala": 2,
+    "Ukraine": 2,
+    "Hungary": 2,
+    "Myanmar": 6,
+    "South Africa": 2,
     "Bangladesh": 1,
-    "Pakistan": 1,
-    "Australia": 1
+    "Chile": 3,
+    "Sri Lanka": 1,
+    "United Kingdom": 2,
+    "Czech Republic": 1,
+    "Tajikistan": 2,
+    "Uruguay": 1,
+    "Moldova": 2,
+    "Guyana": 1,
+    "Burundi": 2,
+    "Romania": 1,
+    "Turkey": 1,
+    "Estonia": 2,
+    "Cameroon": 1,
+    "Russia": 1,
+    "Netherlands": 1,
+    "Australia": 1,
+    "Kazakhstan": 1,
+    "Ecuador": 1,
+    "Cuba": 1,
+    "Morocco": 1,
+    "Paraguay": 1,
+    "Saudi Arabia": 1,
+    "Uzbekistan": 1,
+    "Iraq": 1,
+    "Sudan": 1,
+    "Kuwait": 1,
+    "Bulgaria": 1,
+    "Croatia": 1,
+    "Spain": 1
   },
   "regionPicks": {
-    "East & Southeast Asia": 19,
-    "Middle East": 12,
-    "Africa": 10,
-    "Latin America": 8,
-    "South & Central Asia": 4,
-    "Western Europe": 3,
-    "Eastern Europe & Russia": 2,
-    "Pacific / Oceania": 2,
-    "North America": 2
+    "Middle East": 8,
+    "Western Europe": 15,
+    "Pacific / Oceania": 6,
+    "South & Central Asia": 13,
+    "East & Southeast Asia": 5,
+    "Latin America": 4,
+    "North America": 7,
+    "Africa": 3,
+    "Eastern Europe & Russia": 8
   },
   "regionCountries": {
-    "Latin America": [
-      "Nicaragua",
-      "Brazil",
-      "Colombia",
-      "Argentina",
-      "Peru",
-      "Chile",
-      "Bolivia",
-      "Ecuador",
-      "Venezuela",
-      "Guatemala",
-      "Honduras",
-      "El Salvador",
-      "Costa Rica",
-      "Panama",
-      "Cuba",
-      "Haiti",
-      "Dominican Republic",
-      "Jamaica",
-      "Mexico"
-    ],
     "Africa": [
       "Kenya",
       "Uganda",
@@ -83,53 +119,36 @@
       "Morocco",
       "Angola",
       "Cameroon",
-      "Democratic Republic of Congo"
-    ],
-    "Middle East": [
-      "Israel",
-      "Jordan",
-      "Lebanon",
-      "Iraq",
-      "Iran",
-      "Saudi Arabia",
-      "Syria"
-    ],
-    "Western Europe": [
-      "Germany",
-      "France",
-      "United Kingdom",
-      "Spain",
-      "Italy",
-      "Portugal",
-      "Netherlands",
-      "Belgium",
-      "Sweden",
-      "Norway",
-      "Denmark",
-      "Finland",
-      "Switzerland",
-      "Austria"
-    ],
-    "Eastern Europe & Russia": [
-      "Poland",
-      "Ukraine",
-      "Romania",
-      "Russia"
-    ],
-    "South & Central Asia": [
-      "India",
-      "Bangladesh",
-      "Pakistan",
-      "Sri Lanka",
-      "Nepal",
-      "Afghanistan",
-      "Kazakhstan",
-      "Uzbekistan"
+      "Democratic Republic of the Congo",
+      "Malawi",
+      "Sudan",
+      "South Sudan",
+      "Burundi",
+      "Liberia",
+      "Sierra Leone",
+      "Mali",
+      "Niger",
+      "Chad",
+      "Somalia",
+      "Botswana",
+      "Namibia",
+      "Tunisia",
+      "Algeria",
+      "Ivory Coast",
+      "Burkina Faso",
+      "Benin",
+      "Togo",
+      "Guinea",
+      "Eritrea",
+      "Libya"
     ],
     "East & Southeast Asia": [
       "China",
       "Japan",
       "South Korea",
+      "Taiwan",
+      "Mongolia",
+      "Hong Kong",
       "Thailand",
       "Philippines",
       "Vietnam",
@@ -138,136 +157,265 @@
       "Malaysia",
       "Singapore",
       "Indonesia",
-      "Laos"
+      "Laos",
+      "North Korea"
     ],
-    "Pacific / Oceania": [
-      "Australia",
-      "New Zealand"
+    "Eastern Europe & Russia": [
+      "Russia",
+      "Ukraine",
+      "Poland",
+      "Romania",
+      "Hungary",
+      "Czech Republic",
+      "Bulgaria",
+      "Serbia",
+      "Moldova",
+      "Belarus",
+      "Georgia",
+      "Armenia",
+      "Albania",
+      "Croatia",
+      "Bosnia and Herzegovina",
+      "Slovakia",
+      "Lithuania",
+      "Latvia",
+      "Estonia"
+    ],
+    "Latin America": [
+      "Mexico",
+      "Guatemala",
+      "Honduras",
+      "El Salvador",
+      "Nicaragua",
+      "Costa Rica",
+      "Panama",
+      "Colombia",
+      "Venezuela",
+      "Ecuador",
+      "Peru",
+      "Bolivia",
+      "Brazil",
+      "Chile",
+      "Argentina",
+      "Paraguay",
+      "Uruguay",
+      "Cuba",
+      "Haiti",
+      "Dominican Republic",
+      "Jamaica",
+      "Puerto Rico",
+      "Guyana"
+    ],
+    "Middle East": [
+      "Israel",
+      "Jordan",
+      "Lebanon",
+      "Syria",
+      "Iraq",
+      "Iran",
+      "Saudi Arabia",
+      "Turkey",
+      "Yemen",
+      "United Arab Emirates",
+      "Oman",
+      "Qatar",
+      "Kuwait"
     ],
     "North America": [
       "United States",
-      "Canada"
+      "Canada",
+      "Greenland"
+    ],
+    "Pacific / Oceania": [
+      "Australia",
+      "New Zealand",
+      "Papua New Guinea",
+      "Fiji",
+      "Solomon Islands",
+      "Samoa",
+      "Vanuatu"
+    ],
+    "South & Central Asia": [
+      "India",
+      "Pakistan",
+      "Bangladesh",
+      "Nepal",
+      "Sri Lanka",
+      "Afghanistan",
+      "Bhutan",
+      "Kazakhstan",
+      "Uzbekistan",
+      "Kyrgyzstan",
+      "Tajikistan",
+      "Turkmenistan"
+    ],
+    "Western Europe": [
+      "United Kingdom",
+      "Ireland",
+      "France",
+      "Germany",
+      "Netherlands",
+      "Belgium",
+      "Spain",
+      "Portugal",
+      "Italy",
+      "Switzerland",
+      "Austria",
+      "Sweden",
+      "Norway",
+      "Denmark",
+      "Finland",
+      "Iceland",
+      "Greece"
     ]
   },
   "cityPicks": [
+    {
+      "name": "Kathmandu",
+      "countryCode": "NP",
+      "lat": 27.70169,
+      "lng": 85.3142,
+      "count": 2
+    },
+    {
+      "name": "Kyiv",
+      "countryCode": "UA",
+      "lat": 50.45466,
+      "lng": 30.5238,
+      "count": 4
+    },
+    {
+      "name": "Mexico City",
+      "countryCode": "MX",
+      "lat": 19.42847,
+      "lng": -99.12766,
+      "count": 7
+    },
     {
       "name": "Bangkok",
       "countryCode": "TH",
       "lat": 13.75398,
       "lng": 100.50144,
-      "count": 31
+      "count": 15
+    },
+    {
+      "name": "Kigali",
+      "countryCode": "RW",
+      "lat": -1.94995,
+      "lng": 30.05885,
+      "count": 2
+    },
+    {
+      "name": "Yangon",
+      "countryCode": "MM",
+      "lat": 16.80528,
+      "lng": 96.15611,
+      "count": 2
+    },
+    {
+      "name": "Moscow",
+      "countryCode": "RU",
+      "lat": 55.75222,
+      "lng": 37.61556,
+      "count": 5
+    },
+    {
+      "name": "Shanghai",
+      "countryCode": "CN",
+      "lat": 31.22222,
+      "lng": 121.45806,
+      "count": 8
     },
     {
       "name": "Nairobi",
       "countryCode": "KE",
       "lat": -1.28333,
       "lng": 36.81667,
-      "count": 22
+      "count": 7
+    },
+    {
+      "name": "Cebu City",
+      "countryCode": "PH",
+      "lat": 10.31672,
+      "lng": 123.89071,
+      "count": 3
+    },
+    {
+      "name": "Ho Chi Minh City",
+      "countryCode": "VN",
+      "lat": 10.82302,
+      "lng": 106.62965,
+      "count": 5
+    },
+    {
+      "name": "Guatemala City",
+      "countryCode": "GT",
+      "lat": 14.64072,
+      "lng": -90.51327,
+      "count": 3
+    },
+    {
+      "name": "San Salvador",
+      "countryCode": "SV",
+      "lat": 13.68935,
+      "lng": -89.18718,
+      "count": 2
+    },
+    {
+      "name": "Los Angeles",
+      "countryCode": "US",
+      "lat": 34.05223,
+      "lng": -118.24368,
+      "count": 3
     },
     {
       "name": "Manila",
       "countryCode": "PH",
       "lat": 14.5958,
       "lng": 120.9772,
-      "count": 18
+      "count": 7
     },
     {
-      "name": "Managua",
-      "countryCode": "NI",
-      "lat": 12.13282,
-      "lng": -86.2926,
-      "count": 16
+      "name": "Buenos Aires",
+      "countryCode": "AR",
+      "lat": -34.61315,
+      "lng": -58.37723,
+      "count": 1
     },
     {
-      "name": "Kampala",
-      "countryCode": "UG",
-      "lat": 0.31628,
-      "lng": 32.58219,
-      "count": 14
+      "name": "Amsterdam",
+      "countryCode": "NL",
+      "lat": 52.37403,
+      "lng": 4.88969,
+      "count": 3
     },
     {
-      "name": "Chiang Mai",
-      "countryCode": "TH",
-      "lat": 18.79038,
-      "lng": 98.98468,
-      "count": 9
-    },
-    {
-      "name": "Mumbai",
-      "countryCode": "IN",
-      "lat": 19.07283,
-      "lng": 72.88261,
-      "count": 6
-    },
-    {
-      "name": "Cebu",
-      "countryCode": "PH",
-      "lat": 10.31672,
-      "lng": 123.89071,
-      "count": 6
-    },
-    {
-      "name": "São Paulo",
-      "countryCode": "BR",
-      "lat": -23.5475,
-      "lng": -46.63611,
-      "count": 5
+      "name": "Sydney",
+      "countryCode": "AU",
+      "lat": -33.86785,
+      "lng": 151.20732,
+      "count": 2
     },
     {
       "name": "Tokyo",
       "countryCode": "JP",
-      "lat": 35.6897,
-      "lng": 139.6922,
-      "count": 5
+      "lat": 35.6895,
+      "lng": 139.69171,
+      "count": 7
     },
     {
-      "name": "Nairobi",
-      "countryCode": "KE",
-      "lat": -1.28333,
-      "lng": 36.81667,
-      "count": 4
+      "name": "Singapore",
+      "countryCode": "SG",
+      "lat": 1.28967,
+      "lng": 103.85007,
+      "count": 1
     },
     {
-      "name": "Berlin",
-      "countryCode": "DE",
-      "lat": 52.52437,
-      "lng": 13.41053,
-      "count": 4
-    },
-    {
-      "name": "Seoul",
-      "countryCode": "KR",
-      "lat": 37.566,
-      "lng": 126.9784,
-      "count": 3
-    },
-    {
-      "name": "Mombasa",
-      "countryCode": "KE",
-      "lat": -4.05466,
-      "lng": 39.66359,
-      "count": 3
-    },
-    {
-      "name": "Bogotá",
-      "countryCode": "CO",
-      "lat": 4.60971,
-      "lng": -74.08175,
-      "count": 3
-    },
-    {
-      "name": "Jinja",
-      "countryCode": "UG",
-      "lat": 0.44958,
-      "lng": 33.20317,
-      "count": 2
-    },
-    {
-      "name": "Addis Ababa",
-      "countryCode": "ET",
-      "lat": 9.02497,
-      "lng": 38.74689,
-      "count": 2
+      "name": "Accra",
+      "countryCode": "GH",
+      "lat": 5.55602,
+      "lng": -0.1969,
+      "count": 1
     },
     {
       "name": "Beijing",
@@ -277,17 +425,59 @@
       "count": 2
     },
     {
-      "name": "Jakarta",
-      "countryCode": "ID",
-      "lat": -6.21462,
-      "lng": 106.84513,
+      "name": "Santiago",
+      "countryCode": "CL",
+      "lat": -33.45694,
+      "lng": -70.64827,
+      "count": 4
+    },
+    {
+      "name": "San Francisco",
+      "countryCode": "US",
+      "lat": 37.77493,
+      "lng": -122.41942,
+      "count": 13
+    },
+    {
+      "name": "Managua",
+      "countryCode": "NI",
+      "lat": 12.13282,
+      "lng": -86.2734,
+      "count": 6
+    },
+    {
+      "name": "Berlin",
+      "countryCode": "DE",
+      "lat": 52.52437,
+      "lng": 13.41053,
+      "count": 1
+    },
+    {
+      "name": "Seoul",
+      "countryCode": "KR",
+      "lat": 37.566,
+      "lng": 126.9784,
       "count": 2
     },
     {
-      "name": "Phnom Penh",
-      "countryCode": "KH",
-      "lat": 11.56245,
-      "lng": 104.91601,
+      "name": "Kampala",
+      "countryCode": "UG",
+      "lat": 0.31628,
+      "lng": 32.58219,
+      "count": 1
+    },
+    {
+      "name": "Bogotá",
+      "countryCode": "CO",
+      "lat": 4.60971,
+      "lng": -74.08175,
+      "count": 1
+    },
+    {
+      "name": "Paris",
+      "countryCode": "FR",
+      "lat": 48.85341,
+      "lng": 2.3488,
       "count": 2
     },
     {
@@ -295,239 +485,461 @@
       "countryCode": "GB",
       "lat": 51.50853,
       "lng": -0.12574,
+      "count": 3
+    },
+    {
+      "name": "New York City",
+      "countryCode": "US",
+      "lat": 40.71427,
+      "lng": -74.00597,
       "count": 2
+    },
+    {
+      "name": "Lagos",
+      "countryCode": "NG",
+      "lat": 6.45306,
+      "lng": 3.39583,
+      "count": 2
+    },
+    {
+      "name": "Chiang Mai",
+      "countryCode": "TH",
+      "lat": 18.79038,
+      "lng": 98.98468,
+      "count": 2
+    },
+    {
+      "name": "Addis Ababa",
+      "countryCode": "ET",
+      "lat": 9.02497,
+      "lng": 38.74689,
+      "count": 1
+    },
+    {
+      "name": "São Paulo",
+      "countryCode": "BR",
+      "lat": -23.5475,
+      "lng": -46.63611,
+      "count": 1
+    },
+    {
+      "name": "Chicago",
+      "countryCode": "US",
+      "lat": 41.85003,
+      "lng": -87.65005,
+      "count": 2
+    },
+    {
+      "name": "Istanbul",
+      "countryCode": "TR",
+      "lat": 41.01384,
+      "lng": 28.94966,
+      "count": 5
+    },
+    {
+      "name": "Johannesburg",
+      "countryCode": "ZA",
+      "lat": -26.20227,
+      "lng": 28.04363,
+      "count": 1
+    },
+    {
+      "name": "Warsaw",
+      "countryCode": "PL",
+      "lat": 52.22977,
+      "lng": 21.01178,
+      "count": 1
+    },
+    {
+      "name": "Amman",
+      "countryCode": "JO",
+      "lat": 31.95522,
+      "lng": 35.94503,
+      "count": 1
+    },
+    {
+      "name": "Phnom Penh",
+      "countryCode": "KH",
+      "lat": 11.56245,
+      "lng": 104.91601,
+      "count": 3
+    },
+    {
+      "name": "Dhaka",
+      "countryCode": "BD",
+      "lat": 23.7231,
+      "lng": 90.4086,
+      "count": 2
+    },
+    {
+      "name": "Beirut",
+      "countryCode": "LB",
+      "lat": 33.88894,
+      "lng": 35.49442,
+      "count": 1
+    },
+    {
+      "name": "Mumbai",
+      "countryCode": "IN",
+      "lat": 19.07283,
+      "lng": 72.88261,
+      "count": 2
+    },
+    {
+      "name": "Rome",
+      "countryCode": "IT",
+      "lat": 41.89474,
+      "lng": 12.48232,
+      "count": 1
+    },
+    {
+      "name": "Dar es Salaam",
+      "countryCode": "TZ",
+      "lat": -6.82349,
+      "lng": 39.26951,
+      "count": 3
+    },
+    {
+      "name": "Cairo",
+      "countryCode": "EG",
+      "lat": 30.06263,
+      "lng": 31.24967,
+      "count": 1
     },
     {
       "name": "Lima",
       "countryCode": "PE",
       "lat": -12.04318,
       "lng": -77.02824,
-      "count": 2
+      "count": 1
+    },
+    {
+      "name": "Madrid",
+      "countryCode": "ES",
+      "lat": 40.4165,
+      "lng": -3.70256,
+      "count": 1
     }
   ],
   "sfBayCount": 0,
+  "sfNeighborhoodCounts": {
+    "Potrero Hill": 13,
+    "Bayview Hunters Point": 4,
+    "Sunset/Parkside": 10,
+    "Mission Bay": 9,
+    "Nob Hill": 6,
+    "Tenderloin": 7,
+    "Lone Mountain/NOPA": 6,
+    "Glen Park": 6,
+    "South of Market": 9,
+    "Chinatown": 6,
+    "Mission": 13,
+    "Haight Ashbury": 12,
+    "Portola": 5,
+    "Marina": 6,
+    "Pacific Heights": 4,
+    "North Beach": 9,
+    "Western Addition": 3,
+    "Inner Richmond": 2,
+    "Russian Hill": 4,
+    "Outer Richmond": 11,
+    "Twin Peaks": 6,
+    "Noe Valley": 4,
+    "Inner Sunset": 8,
+    "Visitacion Valley": 3,
+    "Oceanview/Merced/Ingleside": 4,
+    "Castro/Upper Market": 2,
+    "Bernal Heights": 3,
+    "Hayes Valley": 3,
+    "Excelsior": 1
+  },
   "heartbeatCounts": {
-    "Unreached Peoples": {
-      "count": 89,
-      "total": 210
+    "Justice & Human Rights": {
+      "count": 27,
+      "total": 247
     },
-    "Poverty & Economic Justice": {
-      "count": 76,
-      "total": 210
+    "Environment & Creation Care": {
+      "count": 16,
+      "total": 247
+    },
+    "Poverty & Economic Opportunity": {
+      "count": 27,
+      "total": 247
     },
     "Human Trafficking": {
-      "count": 61,
-      "total": 210
+      "count": 26,
+      "total": 247
     },
-    "Refugees & Displacement": {
-      "count": 54,
-      "total": 210
+    "Foster Care & Family": {
+      "count": 16,
+      "total": 247
     },
-    "Children & Youth": {
-      "count": 48,
-      "total": 210
+    "Incarceration & Reentry": {
+      "count": 16,
+      "total": 247
     },
-    "Education Access": {
-      "count": 42,
-      "total": 210
+    "Homelessness & Housing": {
+      "count": 70,
+      "total": 247
     },
-    "Urban Ministry": {
+    "Racial Reconciliation": {
+      "count": 25,
+      "total": 247
+    },
+    "Immigrants & Refugees": {
       "count": 38,
-      "total": 210
+      "total": 247
     },
-    "Healthcare Access": {
-      "count": 35,
-      "total": 210
+    "Mental Health": {
+      "count": 42,
+      "total": 247
     },
-    "Religious Freedom": {
-      "count": 31,
-      "total": 210
+    "Seniors": {
+      "count": 22,
+      "total": 247
     },
-    "Environmental Stewardship": {
+    "Evangelism": {
+      "count": 16,
+      "total": 247
+    },
+    "Disaster & War Relief": {
       "count": 19,
-      "total": 210
+      "total": 247
     },
-    "Racial Justice": {
+    "Children & Education": {
+      "count": 21,
+      "total": 247
+    },
+    "Disability": {
+      "count": 13,
+      "total": 247
+    },
+    "Hunger & Clean Water": {
+      "count": 22,
+      "total": 247
+    },
+    "Youth & Young Adults": {
+      "count": 22,
+      "total": 247
+    },
+    "Addiction Recovery": {
+      "count": 20,
+      "total": 247
+    },
+    "Domestic Violence & Abuse": {
+      "count": 22,
+      "total": 247
+    },
+    "Health Care": {
       "count": 17,
-      "total": 210
-    },
-    "Other": {
-      "count": 11,
-      "total": 210
+      "total": 247
     }
   },
   "vocationCounts": {
-    "Student": {
-      "count": 58,
-      "total": 220
+    "Software & Product": {
+      "count": 72,
+      "total": 247
     },
-    "Tech/Engineering": {
-      "count": 47,
-      "total": 220
+    "Church & Ministry": {
+      "count": 37,
+      "total": 247
     },
-    "Healthcare": {
-      "count": 38,
-      "total": 220
+    "Arts, Media & Design": {
+      "count": 29,
+      "total": 247
     },
-    "Teacher/Educator": {
-      "count": 31,
-      "total": 220
+    "Education": {
+      "count": 46,
+      "total": 247
     },
-    "Ministry/Church Work": {
+    "Law, Government & Policy": {
       "count": 28,
-      "total": 220
+      "total": 247
     },
-    "Business/Entrepreneur": {
-      "count": 24,
-      "total": 220
+    "Business & Finance": {
+      "count": 30,
+      "total": 247
     },
-    "Arts/Creative": {
-      "count": 18,
-      "total": 220
-    },
-    "Government/Public Service": {
-      "count": 12,
-      "total": 220
-    },
-    "Homemaker": {
-      "count": 10,
-      "total": 220
+    "AI & Data": {
+      "count": 33,
+      "total": 247
     },
     "Retired": {
-      "count": 8,
-      "total": 220
+      "count": 21,
+      "total": 247
     },
-    "Other": {
-      "count": 6,
-      "total": 220
+    "Nonprofit & Social Services": {
+      "count": 22,
+      "total": 247
+    },
+    "Science & Research": {
+      "count": 31,
+      "total": 247
+    },
+    "Caregiving & Home": {
+      "count": 20,
+      "total": 247
+    },
+    "Student": {
+      "count": 36,
+      "total": 247
+    },
+    "Trades, Construction & Real Estate": {
+      "count": 23,
+      "total": 247
+    },
+    "Healthcare & Mental Health": {
+      "count": 39,
+      "total": 247
+    },
+    "Engineering (hardware, civil, mechanical)": {
+      "count": 20,
+      "total": 247
+    },
+    "Hospitality & Food": {
+      "count": 16,
+      "total": 247
     }
   },
   "topPlaces": [
     {
-      "name": "Thailand",
-      "type": "country",
-      "count": 47,
-      "pct": 19
-    },
-    {
       "name": "Kenya",
       "type": "country",
-      "count": 38,
-      "pct": 15.4
+      "count": 18,
+      "pct": 7.28744939271255
     },
     {
-      "name": "Philippines",
+      "name": "Mexico",
       "type": "country",
-      "count": 35,
-      "pct": 14.2
+      "count": 17,
+      "pct": 6.882591093117409
     },
     {
-      "name": "Nicaragua",
+      "name": "Thailand",
       "type": "country",
-      "count": 28,
-      "pct": 11.3
+      "count": 17,
+      "pct": 6.882591093117409
     },
     {
-      "name": "East & Southeast Asia",
-      "type": "region",
-      "count": 19,
-      "pct": 7.7
-    },
-    {
-      "name": "Uganda",
+      "name": "China",
       "type": "country",
-      "count": 26,
-      "pct": 10.5
-    },
-    {
-      "name": "Middle East",
-      "type": "region",
-      "count": 12,
-      "pct": 4.9
-    },
-    {
-      "name": "Africa",
-      "type": "region",
-      "count": 10,
-      "pct": 4
-    },
-    {
-      "name": "Brazil",
-      "type": "country",
-      "count": 12,
-      "pct": 4.9
-    },
-    {
-      "name": "Latin America",
-      "type": "region",
-      "count": 8,
-      "pct": 3.2
-    },
-    {
-      "name": "India",
-      "type": "country",
-      "count": 10,
-      "pct": 4
-    },
-    {
-      "name": "Japan",
-      "type": "country",
-      "count": 8,
-      "pct": 3.2
-    },
-    {
-      "name": "Germany",
-      "type": "country",
-      "count": 7,
-      "pct": 2.8
-    },
-    {
-      "name": "Colombia",
-      "type": "country",
-      "count": 6,
-      "pct": 2.4
-    },
-    {
-      "name": "South & Central Asia",
-      "type": "region",
-      "count": 4,
-      "pct": 1.6
+      "count": 15,
+      "pct": 6.0728744939271255
     },
     {
       "name": "Western Europe",
       "type": "region",
-      "count": 3,
-      "pct": 1.2
+      "count": 15,
+      "pct": 6.0728744939271255
+    },
+    {
+      "name": "South & Central Asia",
+      "type": "region",
+      "count": 13,
+      "pct": 5.263157894736842
+    },
+    {
+      "name": "Philippines",
+      "type": "country",
+      "count": 11,
+      "pct": 4.4534412955465585
+    },
+    {
+      "name": "Nicaragua",
+      "type": "country",
+      "count": 10,
+      "pct": 4.048582995951417
+    },
+    {
+      "name": "India",
+      "type": "country",
+      "count": 9,
+      "pct": 3.643724696356275
+    },
+    {
+      "name": "Brazil",
+      "type": "country",
+      "count": 8,
+      "pct": 3.2388663967611335
+    },
+    {
+      "name": "Pakistan",
+      "type": "country",
+      "count": 8,
+      "pct": 3.2388663967611335
+    },
+    {
+      "name": "Uganda",
+      "type": "country",
+      "count": 8,
+      "pct": 3.2388663967611335
+    },
+    {
+      "name": "Middle East",
+      "type": "region",
+      "count": 8,
+      "pct": 3.2388663967611335
+    },
+    {
+      "name": "Eastern Europe & Russia",
+      "type": "region",
+      "count": 8,
+      "pct": 3.2388663967611335
     },
     {
       "name": "South Korea",
       "type": "country",
-      "count": 5,
-      "pct": 2
+      "count": 7,
+      "pct": 2.834008097165992
     },
     {
-      "name": "Israel",
+      "name": "Indonesia",
       "type": "country",
-      "count": 4,
-      "pct": 1.6
+      "count": 7,
+      "pct": 2.834008097165992
+    },
+    {
+      "name": "Canada",
+      "type": "country",
+      "count": 7,
+      "pct": 2.834008097165992
+    },
+    {
+      "name": "North America",
+      "type": "region",
+      "count": 7,
+      "pct": 2.834008097165992
+    },
+    {
+      "name": "Vietnam",
+      "type": "country",
+      "count": 6,
+      "pct": 2.42914979757085
+    },
+    {
+      "name": "Myanmar",
+      "type": "country",
+      "count": 6,
+      "pct": 2.42914979757085
     }
   ],
+  "unmatchedCountries": [],
   "unmatchedCities": [
     {
-      "typed": "Bankok",
-      "country": "Thailand"
+      "city": "Busan",
+      "country": "South Korea"
     },
     {
-      "typed": "chiang mai",
-      "country": "Thailand"
+      "city": "Toronto",
+      "country": "Canada"
     },
     {
-      "typed": "Narobi",
-      "country": "Kenya"
+      "city": "Seattle",
+      "country": "United States"
     }
   ],
-  "invalidRowCount": 8,
-  "rowCount": 308,
-  "readAt": "2026-10-22T05:32:28.185Z",
+  "invalidRowCount": 0,
+  "rowCount": 247,
+  "readAt": "2026-10-22T06:15:26.361Z",
   "isLive": true
 }

@@ -1,8 +1,12 @@
 /**
  * gen-demo-state.js
  *
- * Generates a realistic ProcessedState as JSON at data/demo-state.json.
- * No Sheet API calls needed. Used by DEMO_MODE=true in index.js.
+ * Generates a realistic ProcessedState as JSON at data/demo-state.json, used by
+ * DEMO_MODE=true in index.js. No Sheet API calls needed.
+ *
+ * Simulates 247 respondents filling in the real form (same option lists, same
+ * row format sync-pc writes) and runs them through the real processor, so the
+ * demo lights the map the way a full survey would.
  *
  * Usage: node scripts/gen-demo-state.js
  */
@@ -10,170 +14,201 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { processResponses } from '../src/processor.js';
+import * as geonames from '../src/geonames.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const PEOPLE = 247;
+
+// Seeded RNG so the demo is the same on every run
+let seed = 20261021;
+function rand() {
+  seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/** Pick one key from {key: weight}. */
+function weighted(weights) {
+  const entries = Object.entries(weights);
+  let r = rand() * entries.reduce((sum, [, w]) => sum + w, 0);
+  for (const [key, w] of entries) {
+    if ((r -= w) < 0) return key;
+  }
+  return entries[entries.length - 1][0];
+}
+
+/** Pick n distinct items from a list, earlier items more likely. */
+function pickDistinct(list, n, bias = 1.6) {
+  const out = new Set();
+  while (out.size < Math.min(n, list.length)) {
+    out.add(list[Math.floor(rand() ** bias * list.length)]);
+  }
+  return [...out];
+}
 
 // ---------------------------------------------------------------------------
-// Realistic demo data
+// Form option lists (from Planning Center form 1335453)
 // ---------------------------------------------------------------------------
 
+const VOCATIONS = [
+  'Software & Product', 'Healthcare & Mental Health', 'Education', 'Student',
+  'Business & Finance', 'Church & Ministry', 'Arts, Media & Design', 'AI & Data',
+  'Nonprofit & Social Services', 'Engineering (hardware, civil, mechanical)',
+  'Law, Government & Policy', 'Science & Research', 'Hospitality & Food',
+  'Trades, Construction & Real Estate', 'Caregiving & Home', 'Retired',
+];
+
+const HEARTBEATS = [
+  'Homelessness & Housing', 'Mental Health', 'Immigrants & Refugees',
+  'Poverty & Economic Opportunity', 'Children & Education', 'Human Trafficking',
+  'Justice & Human Rights', 'Racial Reconciliation', 'Hunger & Clean Water',
+  'Youth & Young Adults', 'Evangelism', 'Foster Care & Family', 'Addiction Recovery',
+  'Environment & Creation Care', 'Domestic Violence & Abuse', 'Health Care',
+  'Disaster & War Relief', 'Incarceration & Reentry', 'Disability', 'Seniors',
+];
+
+const SF_NEIGHBORHOODS = [
+  'Mission', 'Inner Sunset', 'Outer Sunset/Parkside', 'Inner Richmond', 'Outer Richmond',
+  'Noe Valley', 'Bernal Heights', 'SoMa', 'Castro/Upper Market', 'Hayes Valley',
+  'Western Addition', 'Lone Mountain/NOPA', 'Excelsior', 'Potrero Hill', 'Dogpatch',
+  'Mission Bay', 'Glen Park', 'Haight Ashbury', 'Cole Valley', 'Marina', 'Nob Hill',
+  'Russian Hill', 'North Beach', 'Chinatown', 'Pacific Heights', 'Visitacion Valley',
+  'Bayview Hunters Point', 'Tenderloin', 'Ingleside', 'Portola', 'Twin Peaks',
+];
+
+const BAY_CITIES = {
+  'East Bay': ['Oakland', 'Berkeley', 'Alameda', 'Emeryville', 'Fremont', 'Walnut Creek'],
+  'Peninsula': ['Daly City', 'South San Francisco', 'San Mateo', 'Redwood City', 'Palo Alto'],
+  'South Bay': ['San Jose', 'Mountain View', 'Sunnyvale', 'Santa Clara', 'Cupertino'],
+  'North Bay': [''],
+};
+
+// Region dropdown options, and the Regions tab mapping (country → region)
 const REGION_COUNTRIES = {
-  'Latin America': ['Nicaragua','Brazil','Colombia','Argentina','Peru','Chile','Bolivia','Ecuador','Venezuela','Guatemala','Honduras','El Salvador','Costa Rica','Panama','Cuba','Haiti','Dominican Republic','Jamaica','Mexico'],
-  'Africa': ['Kenya','Uganda','Ethiopia','Nigeria','Ghana','Tanzania','Rwanda','Zambia','Zimbabwe','Mozambique','Madagascar','Senegal','South Africa','Egypt','Morocco','Angola','Cameroon','Democratic Republic of Congo'],
-  'Middle East': ['Israel','Jordan','Lebanon','Iraq','Iran','Saudi Arabia','Syria'],
-  'Western Europe': ['Germany','France','United Kingdom','Spain','Italy','Portugal','Netherlands','Belgium','Sweden','Norway','Denmark','Finland','Switzerland','Austria'],
-  'Eastern Europe & Russia': ['Poland','Ukraine','Romania','Russia'],
-  'South & Central Asia': ['India','Bangladesh','Pakistan','Sri Lanka','Nepal','Afghanistan','Kazakhstan','Uzbekistan'],
-  'East & Southeast Asia': ['China','Japan','South Korea','Thailand','Philippines','Vietnam','Cambodia','Myanmar','Malaysia','Singapore','Indonesia','Laos'],
-  'Pacific / Oceania': ['Australia','New Zealand'],
-  'North America': ['United States','Canada'],
+  'Africa': ['Kenya', 'Uganda', 'Ethiopia', 'Nigeria', 'Ghana', 'Tanzania', 'Rwanda', 'Zambia', 'Zimbabwe', 'Mozambique', 'Madagascar', 'Senegal', 'South Africa', 'Egypt', 'Morocco', 'Angola', 'Cameroon', 'Democratic Republic of the Congo', 'Malawi', 'Sudan', 'South Sudan', 'Burundi', 'Liberia', 'Sierra Leone', 'Mali', 'Niger', 'Chad', 'Somalia', 'Botswana', 'Namibia', 'Tunisia', 'Algeria', 'Ivory Coast', 'Burkina Faso', 'Benin', 'Togo', 'Guinea', 'Eritrea', 'Libya'],
+  'East & Southeast Asia': ['China', 'Japan', 'South Korea', 'Taiwan', 'Mongolia', 'Hong Kong', 'Thailand', 'Philippines', 'Vietnam', 'Cambodia', 'Myanmar', 'Malaysia', 'Singapore', 'Indonesia', 'Laos', 'North Korea'],
+  'Eastern Europe & Russia': ['Russia', 'Ukraine', 'Poland', 'Romania', 'Hungary', 'Czech Republic', 'Bulgaria', 'Serbia', 'Moldova', 'Belarus', 'Georgia', 'Armenia', 'Albania', 'Croatia', 'Bosnia and Herzegovina', 'Slovakia', 'Lithuania', 'Latvia', 'Estonia'],
+  'Latin America': ['Mexico', 'Guatemala', 'Honduras', 'El Salvador', 'Nicaragua', 'Costa Rica', 'Panama', 'Colombia', 'Venezuela', 'Ecuador', 'Peru', 'Bolivia', 'Brazil', 'Chile', 'Argentina', 'Paraguay', 'Uruguay', 'Cuba', 'Haiti', 'Dominican Republic', 'Jamaica', 'Puerto Rico', 'Guyana'],
+  'Middle East': ['Israel', 'Jordan', 'Lebanon', 'Syria', 'Iraq', 'Iran', 'Saudi Arabia', 'Turkey', 'Yemen', 'United Arab Emirates', 'Oman', 'Qatar', 'Kuwait'],
+  'North America': ['United States', 'Canada', 'Greenland'],
+  'Pacific / Oceania': ['Australia', 'New Zealand', 'Papua New Guinea', 'Fiji', 'Solomon Islands', 'Samoa', 'Vanuatu'],
+  'South & Central Asia': ['India', 'Pakistan', 'Bangladesh', 'Nepal', 'Sri Lanka', 'Afghanistan', 'Bhutan', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan', 'Turkmenistan'],
+  'Western Europe': ['United Kingdom', 'Ireland', 'France', 'Germany', 'Netherlands', 'Belgium', 'Spain', 'Portugal', 'Italy', 'Switzerland', 'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Iceland', 'Greece'],
 };
 
-const countryPicks = {
-  'Thailand': 47,
-  'Kenya': 38,
-  'Philippines': 35,
-  'Nicaragua': 28,
-  'Uganda': 26,
-  'Brazil': 12,
-  'India': 10,
-  'Japan': 8,
-  'Germany': 7,
-  'Colombia': 6,
-  'South Korea': 5,
-  'Indonesia': 5,
-  'Ethiopia': 4,
-  'Israel': 4,
-  'Nigeria': 3,
-  'United Kingdom': 3,
-  'China': 3,
-  'France': 2,
-  'Cambodia': 2,
-  'Myanmar': 2,
-  'Vietnam': 2,
-  'Rwanda': 2,
-  'Peru': 2,
-  'Mexico': 2,
-  'Guatemala': 1,
-  'South Africa': 1,
-  'Nepal': 1,
-  'Bangladesh': 1,
-  'Pakistan': 1,
-  'Australia': 1,
+// Country picks: a heavy head (global partners + heritage countries) and a long
+// tail — every country in the Regions mapping can come up
+const COUNTRY_WEIGHTS = {
+  'Thailand': 30, 'Kenya': 24, 'Philippines': 24, 'Mexico': 22, 'China': 20,
+  'Nicaragua': 16, 'Uganda': 16, 'South Korea': 15, 'India': 15, 'Vietnam': 12,
+  'Japan': 10, 'Taiwan': 9, 'Guatemala': 8, 'Brazil': 8, 'Israel': 8, 'Ukraine': 7,
+  'Indonesia': 7, 'Cambodia': 7, 'United Kingdom': 6, 'Ethiopia': 6, 'Nigeria': 6,
+  'El Salvador': 6, 'Haiti': 5, 'Colombia': 5, 'Peru': 5, 'Germany': 5, 'France': 5,
+  'Canada': 5, 'Myanmar': 5, 'Rwanda': 5, 'South Africa': 4, 'Egypt': 4, 'Turkey': 4,
+  'Jordan': 4, 'Lebanon': 4, 'Iran': 4, 'Nepal': 4, 'Bangladesh': 4, 'Pakistan': 4,
+  'Australia': 4, 'Russia': 4, 'Spain': 4, 'Italy': 4, 'Ghana': 3, 'Tanzania': 3,
+  'Honduras': 3, 'Dominican Republic': 3, 'Ecuador': 3, 'Argentina': 3, 'Chile': 3,
+  'Malaysia': 3, 'Mongolia': 3, 'Laos': 3, 'Sri Lanka': 3, 'Poland': 3, 'Romania': 3,
+  'Ireland': 3, 'Netherlands': 3, 'Greece': 3, 'Iraq': 3, 'Syria': 3,
+};
+for (const countries of Object.values(REGION_COUNTRIES)) {
+  for (const c of countries) COUNTRY_WEIGHTS[c] ??= 1;
+}
+
+// City picks, typed the way people would ([city, country]). Only cities in
+// data/cities15k.json resolve, so the list sticks to those.
+const CITY_WEIGHTS = {
+  'San Francisco|United States': 14, 'Bangkok|Thailand': 12, 'Manila|Philippines': 10,
+  'Nairobi|Kenya': 10, 'Mexico City|Mexico': 8, 'Seoul|South Korea': 7, 'Tokyo|Japan': 7,
+  'Shanghai|China': 6, 'Ho Chi Minh City|Vietnam': 5,
+  'Chiang Mai|Thailand': 5, 'Kampala|Uganda': 5, 'Managua|Nicaragua': 5, 'Mumbai|India': 4,
+  'London|United Kingdom': 4, 'Los Angeles|United States': 4, 'New York City|United States': 4,
+  'Guatemala City|Guatemala': 3, 'Beijing|China': 3, 'Cebu City|Philippines': 3,
+  'Phnom Penh|Cambodia': 3, 'Singapore|Singapore': 3, 'Kyiv|Ukraine': 3,
+  'Addis Ababa|Ethiopia': 2, 'Lagos|Nigeria': 2, 'Kigali|Rwanda': 2, 'Cairo|Egypt': 2,
+  'Istanbul|Turkey': 2, 'Amman|Jordan': 2, 'Beirut|Lebanon': 2, 'Delhi|India': 2,
+  'Kathmandu|Nepal': 2, 'Dhaka|Bangladesh': 2, 'Paris|France': 2, 'Berlin|Germany': 2,
+  'Madrid|Spain': 2, 'Rome|Italy': 2, 'Toronto|Canada': 2,
+  'São Paulo|Brazil': 2, 'Bogotá|Colombia': 2, 'Lima|Peru': 2, 'Buenos Aires|Argentina': 2,
+  'Santiago|Chile': 1, 'San Salvador|El Salvador': 1, 'Port-au-Prince|Haiti': 1,
+  'Sydney|Australia': 2, 'Auckland|New Zealand': 1, 'Ulaanbaatar|Mongolia': 1, 'Yangon|Myanmar': 1,
+  'Kuala Lumpur|Malaysia': 1, 'Osaka|Japan': 1, 'Busan|South Korea': 1, 'Accra|Ghana': 1,
+  'Dar es Salaam|Tanzania': 1, 'Cape Town|South Africa': 1, 'Johannesburg|South Africa': 1,
+  'Moscow|Russia': 1, 'Warsaw|Poland': 1, 'Dublin|Ireland': 1,
+  'Amsterdam|Netherlands': 1, 'Honolulu|United States': 1, 'Chicago|United States': 1,
+  'Houston|United States': 1, 'Seattle|United States': 1,
 };
 
-// Region names match the form's Region dropdown options exactly
-const regionPicks = {
-  'East & Southeast Asia': 19,
-  'Middle East': 12,
-  'Africa': 10,
-  'Latin America': 8,
-  'South & Central Asia': 4,
-  'Western Europe': 3,
-  'Eastern Europe & Russia': 2,
-  'Pacific / Oceania': 2,
-  'North America': 2,
-};
+// ---------------------------------------------------------------------------
+// Simulate respondents (rows in the shape sync-pc writes to the Responses tab)
+// ---------------------------------------------------------------------------
 
-const sfBayCount = 0;
-const totalPeople = 247;
+function makePlace() {
+  const kind = weighted({ country: 55, city: 30, region: 15 });
+  if (kind === 'country') return { place: weighted(COUNTRY_WEIGHTS), city: '' };
+  if (kind === 'region') return { place: `Region: ${weighted(Object.fromEntries(Object.keys(REGION_COUNTRIES).map(r => [r, 1])))}`, city: '' };
+  const [city, country] = weighted(CITY_WEIGHTS).split('|');
+  return { place: `City: ${country}`, city };
+}
 
-const cityPicks = [
-  { name: 'Bangkok',     countryCode: 'TH', lat: 13.75398,  lng: 100.50144, count: 31 },
-  { name: 'Nairobi',     countryCode: 'KE', lat: -1.28333,  lng: 36.81667,  count: 22 },
-  { name: 'Manila',      countryCode: 'PH', lat: 14.5958,   lng: 120.9772,  count: 18 },
-  { name: 'Managua',     countryCode: 'NI', lat: 12.13282,  lng: -86.2926,  count: 16 },
-  { name: 'Kampala',     countryCode: 'UG', lat: 0.31628,   lng: 32.58219,  count: 14 },
-  { name: 'Chiang Mai',  countryCode: 'TH', lat: 18.79038,  lng: 98.98468,  count: 9 },
-  { name: 'Mumbai',      countryCode: 'IN', lat: 19.07283,  lng: 72.88261,  count: 6 },
-  { name: 'Cebu',        countryCode: 'PH', lat: 10.31672,  lng: 123.89071, count: 6 },
-  { name: 'São Paulo',   countryCode: 'BR', lat: -23.5475,  lng: -46.63611, count: 5 },
-  { name: 'Tokyo',       countryCode: 'JP', lat: 35.6897,   lng: 139.6922,  count: 5 },
-  { name: 'Nairobi',     countryCode: 'KE', lat: -1.28333,  lng: 36.81667,  count: 4 },
-  { name: 'Berlin',      countryCode: 'DE', lat: 52.52437,  lng: 13.41053,  count: 4 },
-  { name: 'Seoul',       countryCode: 'KR', lat: 37.566,    lng: 126.9784,  count: 3 },
-  { name: 'Mombasa',     countryCode: 'KE', lat: -4.05466,  lng: 39.66359,  count: 3 },
-  { name: 'Bogotá',      countryCode: 'CO', lat: 4.60971,   lng: -74.08175, count: 3 },
-  { name: 'Jinja',       countryCode: 'UG', lat: 0.44958,   lng: 33.20317,  count: 2 },
-  { name: 'Addis Ababa', countryCode: 'ET', lat: 9.02497,   lng: 38.74689,  count: 2 },
-  { name: 'Beijing',     countryCode: 'CN', lat: 39.9075,   lng: 116.39723, count: 2 },
-  { name: 'Jakarta',     countryCode: 'ID', lat: -6.21462,  lng: 106.84513, count: 2 },
-  { name: 'Phnom Penh',  countryCode: 'KH', lat: 11.56245,  lng: 104.91601, count: 2 },
-  { name: 'London',      countryCode: 'GB', lat: 51.50853,  lng: -0.12574,  count: 2 },
-  { name: 'Lima',        countryCode: 'PE', lat: -12.04318, lng: -77.02824, count: 2 },
-];
+function makeRow(i) {
+  const row = {
+    person_id: `DEMO${String(i).padStart(4, '0')}`,
+    submitted_at: new Date(Date.UTC(2026, 9, 1) + i * 3_600_000).toISOString(),
+    is_test: 'FALSE',
+    connect_where_i_live: 'FALSE',
+  };
 
-const heartbeatCounts = {
-  'Unreached Peoples':         { count: 89, total: 210 },
-  'Poverty & Economic Justice': { count: 76, total: 210 },
-  'Human Trafficking':         { count: 61, total: 210 },
-  'Refugees & Displacement':   { count: 54, total: 210 },
-  'Children & Youth':          { count: 48, total: 210 },
-  'Education Access':          { count: 42, total: 210 },
-  'Urban Ministry':            { count: 38, total: 210 },
-  'Healthcare Access':         { count: 35, total: 210 },
-  'Religious Freedom':         { count: 31, total: 210 },
-  'Environmental Stewardship': { count: 19, total: 210 },
-  'Racial Justice':            { count: 17, total: 210 },
-  'Other':                     { count: 11, total: 210 },
-};
+  pickDistinct(VOCATIONS, 1 + Math.floor(rand() * 3)).forEach((v, n) => { row[`vocation_${n + 1}`] = v; });
+  pickDistinct(HEARTBEATS, 1 + Math.floor(rand() * 3)).forEach((h, n) => { row[`heartbeat_${n + 1}`] = h; });
 
-const vocationCounts = {
-  'Student':                  { count: 58, total: 220 },
-  'Tech/Engineering':         { count: 47, total: 220 },
-  'Healthcare':               { count: 38, total: 220 },
-  'Teacher/Educator':         { count: 31, total: 220 },
-  'Ministry/Church Work':     { count: 28, total: 220 },
-  'Business/Entrepreneur':    { count: 24, total: 220 },
-  'Arts/Creative':            { count: 18, total: 220 },
-  'Government/Public Service':{ count: 12, total: 220 },
-  'Homemaker':                { count: 10, total: 220 },
-  'Retired':                  { count: 8,  total: 220 },
-  'Other':                    { count: 6,  total: 220 },
-};
+  const area = weighted({ SF: 70, 'East Bay': 14, Peninsula: 8, 'South Bay': 5, 'North Bay': 3 });
+  const place = area === 'SF'
+    ? pickDistinct(SF_NEIGHBORHOODS, 1, 1.4)[0]
+    : BAY_CITIES[area][Math.floor(rand() * BAY_CITIES[area].length)];
+  row.lives_area = area;
+  row.lives_place = place ? `${area}: ${place}` : area;
 
-const topPlaces = [
-  { name: 'Thailand',       type: 'country', count: 47, pct: 19.0 },
-  { name: 'Kenya',          type: 'country', count: 38, pct: 15.4 },
-  { name: 'Philippines',    type: 'country', count: 35, pct: 14.2 },
-  { name: 'Nicaragua',      type: 'country', count: 28, pct: 11.3 },
-  { name: 'East & Southeast Asia', type: 'region', count: 19, pct: 7.7 },
-  { name: 'Uganda',         type: 'country', count: 26, pct: 10.5 },
-  { name: 'Middle East',    type: 'region',  count: 12, pct: 4.9  },
-  { name: 'Africa',         type: 'region',  count: 10, pct: 4.0  },
-  { name: 'Brazil',         type: 'country', count: 12, pct: 4.9  },
-  { name: 'Latin America',  type: 'region',  count: 8,  pct: 3.2  },
-  { name: 'India',          type: 'country', count: 10, pct: 4.0  },
-  { name: 'Japan',          type: 'country', count: 8,  pct: 3.2  },
-  { name: 'Germany',        type: 'country', count: 7,  pct: 2.8  },
-  { name: 'Colombia',       type: 'country', count: 6,  pct: 2.4  },
-  { name: 'South & Central Asia', type: 'region', count: 4, pct: 1.6 },
-  { name: 'Western Europe', type: 'region',  count: 3,  pct: 1.2  },
-  { name: 'South Korea',    type: 'country', count: 5,  pct: 2.0  },
-  { name: 'Israel',         type: 'country', count: 4,  pct: 1.6  },
-];
+  // Most people share 2–3 places; a few skip the question
+  const placeCount = weighted({ 0: 6, 1: 20, 2: 30, 3: 44 });
+  for (let n = 1; n <= 3; n++) {
+    const p = n <= placeCount ? makePlace() : { place: '', city: '' };
+    row[`connect_${n}_place`] = p.place;
+    row[`connect_${n}_city`] = p.city;
+  }
+  return row;
+}
 
-const state = {
-  totalPeople,
-  countryPicks,
-  regionPicks,
-  regionCountries: REGION_COUNTRIES,
-  cityPicks,
-  sfBayCount,
-  heartbeatCounts,
-  vocationCounts,
-  topPlaces,
-  unmatchedCities: [
-    { typed: 'Bankok', country: 'Thailand' },
-    { typed: 'chiang mai', country: 'Thailand' },
-    { typed: 'Narobi', country: 'Kenya' },
-  ],
-  invalidRowCount: 8,
-  rowCount: 308,
-  readAt: new Date().toISOString(),
-  isLive: true,
+await geonames.initGeonames(join(__dirname, '..', 'data', 'cities15k.json'));
+
+const regionMap = new Map();
+for (const [region, countries] of Object.entries(REGION_COUNTRIES)) {
+  for (const c of countries) regionMap.set(c, region);
+}
+
+const responses = Array.from({ length: PEOPLE }, (_, i) => makeRow(i + 1));
+const state = processResponses(
+  { responses, regionMap, approvals: new Map(), readAt: new Date() },
+  { showTestRows: false },
+  geonames,
+);
+
+// Same plain-object shape index.js's serializeState produces
+const out = {
+  ...state,
+  countryPicks: Object.fromEntries(state.countryPicks),
+  regionPicks: Object.fromEntries(state.regionPicks),
+  regionCountries: Object.fromEntries(state.regionCountries),
+  heartbeatCounts: Object.fromEntries(state.heartbeatCounts),
+  vocationCounts: Object.fromEntries(state.vocationCounts),
 };
 
 const outPath = join(__dirname, '..', 'data', 'demo-state.json');
-writeFileSync(outPath, JSON.stringify(state, null, 2));
+writeFileSync(outPath, JSON.stringify(out, null, 2));
 console.log(`Wrote ${outPath}`);
+console.log(`  ${out.totalPeople} people, ${Object.keys(out.countryPicks).length} countries lit, ` +
+  `${out.cityPicks.length} cities, ${Object.keys(out.regionPicks).length} regions`);
+if (out.unmatchedCountries.length) console.log('  unmatched countries:', out.unmatchedCountries.join(', '));
+if (out.unmatchedCities.length) console.log('  unmatched cities:', out.unmatchedCities.map(c => c.city).join(', '));
