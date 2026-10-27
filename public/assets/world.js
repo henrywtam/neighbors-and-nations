@@ -46,7 +46,8 @@ const OCEAN_LB_POSITIONS = {
 const OCEAN_LB_SIZE = 5;
 // Heart outline for the heartbeat rank badges (24px icon grid)
 const HEART_PATH = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
-// Sidebar lists show everything that fits the screen height; rows past the bottom fade out
+// TV sidebar lists show everything that fits the screen height; rows past the bottom fade out.
+// Desktop lists scroll, so they show every row.
 const SIDEBAR_MAX_ROWS = 40;
 
 // ---------------------------------------------------------------------------
@@ -66,11 +67,17 @@ const SF_LABEL_OFFSETS = {
   'West of Twin Peaks': [0, -20],
 };
 
-// Parks and non-residential areas: show name label but hide the count.
-const SF_NO_COUNT = new Set(['Golden Gate Park', 'McLaren Park', 'Presidio', 'Lincoln Park']);
+// Treasure Island sits far out in the bay, so fitting it shrinks the whole city.
+// The map is fitted to the other neighborhoods and the island is drawn shifted
+// down beside the waterfront.
+const SF_INSET_FEATURE = 'Treasure Island';
+
+// Parks: no one lives there, so they're drawn green with a name but no count.
+const SF_PARKS = new Set(['Golden Gate Park', 'McLaren Park', 'Presidio', 'Lincoln Park']);
+const SF_PARK_FILL = 'hsl(140, 25%, 14%)';
 
 // ---------------------------------------------------------------------------
-// SF local partner organizations
+// SF local partner organizations (San Francisco locations only)
 // ---------------------------------------------------------------------------
 let sfPartnersVisible = false;
 
@@ -82,7 +89,6 @@ const SF_PARTNERS = [
   { name: 'Buena Vista Horace Mann School', branch: 'Permanent Campus',      address: '3351 23rd St',                lat: 37.7515, lng: -122.4343 },
   { name: 'Rise University Preparatory',    address: '1224 Fairfax Ave',                lat: 37.7263, lng: -122.4550 },
   { name: 'SF-Marin Food Bank',              branch: 'SF Branch',             address: '900 Pennsylvania Ave',            lat: 37.7527, lng: -122.3945 },
-  { name: 'SF-Marin Food Bank',              branch: 'Marin Branch',          address: '2550 Kerner Blvd, San Rafael',    lat: 37.9703, lng: -122.5292 },
   { name: 'Foster the City',                address: '1504 Bryant St',                  lat: 37.7697, lng: -122.4105 },
   { name: 'Jamestown Community Center',     address: '2929 19th St',                    lat: 37.7617, lng: -122.4135 },
   { name: 'Donum Dei Classical Academy',    address: '1560 Treat Ave',                  lat: 37.7565, lng: -122.4113 },
@@ -95,7 +101,6 @@ const SF_PARTNERS = [
   { name: 'John O\'Connell High School',    address: '2355 Folsom St',                  lat: 37.7541, lng: -122.4125 },
   { name: 'Mission Graduates',              address: '3040 16th St',                    lat: 37.7648, lng: -122.4205 },
   { name: 'New Door Ventures',              branch: 'New Door – SF',         address: '3221 20th St',                lat: 37.7588, lng: -122.4226 },
-  { name: 'New Door Ventures',              branch: 'New Door – Oakland',    address: '1629 Telegraph Ave, Ste 200', lat: 37.8099, lng: -122.2654 },
   { name: 'Old Skool Cafe',                 address: '1429 Mendell St',                 lat: 37.7355, lng: -122.3878 },
   { name: 'Sunset Youth Services',          branch: 'Main Office',           address: '3918 Judah St',               lat: 37.7611, lng: -122.5009 },
   { name: 'Sunset Youth Services',          branch: 'Family Support Center', address: 'Moraga St & 38th Ave',        lat: 37.7592, lng: -122.4985 },
@@ -150,6 +155,29 @@ let tabRotateTimer = null;
 const TAB_NAMES = ['Places', 'Heart Issues', 'Vocations'];
 const TAB_ROTATE_MS = 5000;
 
+// Display mode: 'tv' (room display at /tv, /tv/sf — no nav, rotating tabs, no hover) or
+// 'desktop' (everything else — nav, scrollable/collapsible sidebar, map tooltips)
+let displayMode = isTvPath(location.pathname) ? 'tv' : 'desktop';
+
+function isTvPath(path) {
+  return path === '/tv' || path.startsWith('/tv/');
+}
+
+function viewFromPath(path) {
+  return path.replace(/^\/tv/, '') === '/sf' ? 'sf' : 'world';
+}
+
+function pathFor(mode, view) {
+  return mode === 'tv' ? (view === 'sf' ? '/tv/sf' : '/tv') : `/${view}`;
+}
+const SIDEBAR_COLLAPSED_KEY = 'nn.sidebarCollapsed';
+
+function applyDisplayMode() {
+  document.body.classList.toggle('mode-tv', displayMode === 'tv');
+  document.body.classList.toggle('mode-desktop', displayMode === 'desktop');
+}
+applyDisplayMode();
+
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
@@ -172,6 +200,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   startTabRotation();
   setupResizeObserver();
   setupAppTabs();
+  setupModeToggle();
+  setupSidebarToggle();
 });
 
 // ---------------------------------------------------------------------------
@@ -255,6 +285,7 @@ function initMap() {
   // Remove existing SVG if any
   const existing = document.getElementById('map-svg');
   if (existing) existing.remove();
+  hideMapTooltip();
 
   svg = d3.select('#map-svg-wrap')
     .append('svg')
@@ -387,6 +418,7 @@ function updateHeader(state) {
 // Full render
 // ---------------------------------------------------------------------------
 function renderMap(state, prevState) {
+  hideMapTooltip(); // hovered elements may be rebuilt underneath the pointer
   renderCountries(state, prevState);
   renderRegions(state, prevState);
   renderCities(state, prevState);
@@ -435,6 +467,17 @@ function renderCountries(state, prevState) {
         .attr('fill', fill)
         .attr('stroke', 'rgba(255,255,255,0.05)')
         .attr('stroke-width', 0.4);
+    })
+    .on('pointerenter pointermove', function(event, d) {
+      const name = countryForFeature(d);
+      const count = name && currentState ? ((currentState.countryPicks || {})[name] || 0) : 0;
+      if (!count) return hideMapTooltip();
+      d3.select(this).classed('hover', true);
+      showMapTooltip(event, name, count, 'country');
+    })
+    .on('pointerleave', function() {
+      d3.select(this).classed('hover', false);
+      hideMapTooltip();
     });
 
   // Update existing
@@ -501,7 +544,9 @@ function renderCountryMarkers(countryPicks, prevState) {
       .attr('class', 'country-marker')
       .attr('cx', cx)
       .attr('cy', cy)
-      .attr('r', 3.5);
+      .attr('r', 3.5)
+      .on('pointerenter pointermove', (event) => showMapTooltip(event, name, countryPicks[name], 'country'))
+      .on('pointerleave', hideMapTooltip);
 
     if (prevState && prevCount === 0) {
       circle.attr('r', 0)
@@ -606,7 +651,53 @@ function renderCities(state, prevState) {
         .ease(d3.easeBounceOut)
         .attr('r', r);
     }
+
+    // Small dots are hard to hit, so hover a larger invisible circle on top
+    g.append('circle')
+      .attr('class', 'city-hit')
+      .attr('cx', cx)
+      .attr('cy', cy)
+      .attr('r', Math.max(r + 3, 8))
+      .on('pointerenter pointermove', (event) => {
+        circle.classed('hover', true);
+        showMapTooltip(event, cityLabel(city), count, 'city');
+      })
+      .on('pointerleave', () => {
+        circle.classed('hover', false);
+        hideMapTooltip();
+      });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Map tooltip (desktop only) — name + count for lit countries and city dots
+// ---------------------------------------------------------------------------
+function showMapTooltip(event, name, count, type) {
+  if (displayMode !== 'desktop') return;
+  const tooltip = document.getElementById('map-tooltip');
+  const wrap = document.getElementById('map-svg-wrap');
+  if (!tooltip || !wrap) return;
+
+  tooltip.className = `visible type-${type}`;
+  tooltip.innerHTML = `<div class="mt-name">${escHtml(name)}</div>
+    <div class="mt-count"><b>${count}</b> ${count === 1 ? 'person' : 'people'}</div>`;
+
+  // Beside the pointer, flipped to the other side near the right/bottom edges
+  const rect = wrap.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const margin = 14;
+  let left = x + margin;
+  let top = y + margin;
+  if (left + tooltip.offsetWidth > rect.width - 8) left = x - tooltip.offsetWidth - margin;
+  if (top + tooltip.offsetHeight > rect.height - 8) top = y - tooltip.offsetHeight - margin;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function hideMapTooltip() {
+  const tooltip = document.getElementById('map-tooltip');
+  if (tooltip) tooltip.className = '';
 }
 
 // ---------------------------------------------------------------------------
@@ -625,6 +716,7 @@ function setupLeaderboardTabs() {
 
 function startTabRotation() {
   clearTimeout(tabRotateTimer);
+  if (displayMode !== 'tv') return; // desktop: tabs only change on click
   tabRotateTimer = setTimeout(() => {
     leaderboardTab = (leaderboardTab + 1) % TAB_NAMES.length;
     setActiveTab(leaderboardTab);
@@ -679,7 +771,7 @@ function renderPlacesList(state, total) {
   }
 
   items.sort((a, b) => b.count - a.count);
-  const top = items.slice(0, SIDEBAR_MAX_ROWS);
+  const top = items.slice(0, sidebarRowLimit());
   const maxCount = top.length > 0 ? top[0].count : 1;
 
   let prevCounts = null;
@@ -690,6 +782,10 @@ function renderPlacesList(state, total) {
     for (const c of previousState.cityPicks || []) prevCounts[cityLabel(c)] = c.count || 0;
   }
   renderRankedList(list, top, total, maxCount, prevCounts);
+}
+
+function sidebarRowLimit() {
+  return displayMode === 'tv' ? SIDEBAR_MAX_ROWS : Infinity;
 }
 
 /** "Shanghai, China" — the country suffix also keeps cities distinct from same-named countries. */
@@ -706,7 +802,7 @@ function renderHeartbeatList(state, total) {
   const items = Object.entries(heartbeatCounts)
     .map(([name, val]) => ({ name, count: val.count || val, type: 'heartbeat' }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, SIDEBAR_MAX_ROWS);
+    .slice(0, sidebarRowLimit());
 
   const maxCount = items.length > 0 ? items[0].count : 1;
   const prevCounts = previousState
@@ -723,7 +819,7 @@ function renderVocationList(state, total) {
   const items = Object.entries(vocationCounts)
     .map(([name, val]) => ({ name, count: val.count || val, type: 'vocation' }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, SIDEBAR_MAX_ROWS);
+    .slice(0, sidebarRowLimit());
 
   const maxCount = items.length > 0 ? items[0].count : 1;
   const prevCounts = previousState
@@ -894,39 +990,84 @@ function toggleSfPartners() {
   if (currentState && sfSvg) renderSfMap(currentState);
 }
 
+async function switchView(view, pushHistory = true) {
+  if (view === currentView) return;
+  currentView = view;
+  document.querySelectorAll('.app-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  document.querySelectorAll('.app-view').forEach(v => {
+    v.classList.toggle('active', v.id === `${view}-view`);
+  });
+  if (pushHistory) history.pushState({ view, mode: displayMode }, '', pathFor(displayMode, view));
+  if (view === 'sf') {
+    if (!sfGeoData) {
+      try { await loadSfGeo(); } catch (e) { console.error('[sf] GeoJSON load failed:', e); return; }
+    }
+    initSfMap();
+  }
+}
+
 function setupAppTabs() {
   const partnersBtn = document.getElementById('sf-partners-toggle');
   if (partnersBtn) partnersBtn.addEventListener('click', toggleSfPartners);
-
-  async function switchView(view, pushHistory = true) {
-    if (view === currentView) return;
-    currentView = view;
-    document.querySelectorAll('.app-tab').forEach(b => {
-      b.classList.toggle('active', b.dataset.view === view);
-    });
-    document.querySelectorAll('.app-view').forEach(v => {
-      v.classList.toggle('active', v.id === `${view}-view`);
-    });
-    if (pushHistory) history.pushState({ view }, '', `/${view}`);
-    if (view === 'sf') {
-      if (!sfGeoData) {
-        try { await loadSfGeo(); } catch (e) { console.error('[sf] GeoJSON load failed:', e); return; }
-      }
-      initSfMap();
-    }
-  }
 
   document.querySelectorAll('.app-tab').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
 
   // Pathname-based routing: read on load, follow browser back/forward
-  const initialPath = location.pathname.replace(/^\//, '') || 'world';
-  if (initialPath === 'sf') switchView('sf', false);
+  if (viewFromPath(location.pathname) === 'sf') switchView('sf', false);
 
-  window.addEventListener('popstate', (e) => {
-    const view = (e.state && e.state.view) || (location.pathname === '/sf' ? 'sf' : 'world');
-    switchView(view, false);
+  window.addEventListener('popstate', () => {
+    setDisplayMode(isTvPath(location.pathname) ? 'tv' : 'desktop', false);
+    switchView(viewFromPath(location.pathname), false);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Display mode switching (TV ⇄ desktop)
+// ---------------------------------------------------------------------------
+function setDisplayMode(mode, pushHistory = true) {
+  if (mode === displayMode) return;
+  displayMode = mode;
+  applyDisplayMode();
+  hideMapTooltip();
+  if (pushHistory) history.pushState({ mode }, '', pathFor(mode, currentView));
+  if (currentState) renderLeaderboard(currentState); // row limit differs per mode
+  startTabRotation();
+}
+
+function setupModeToggle() {
+  document.getElementById('mode-to-tv')?.addEventListener('click', () => setDisplayMode('tv'));
+  document.getElementById('mode-to-desktop')?.addEventListener('click', () => setDisplayMode('desktop'));
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar collapse (desktop only) — shared by the world and SF sidebars,
+// remembered per browser. The maps re-fit via their ResizeObservers.
+// ---------------------------------------------------------------------------
+function setupSidebarToggle() {
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'; } catch { /* storage unavailable */ }
+
+  const apply = () => {
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    document.querySelectorAll('.sidebar-toggle').forEach(btn => {
+      const label = collapsed ? 'Expand list' : 'Collapse list';
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+    });
+  };
+  apply();
+
+  document.querySelectorAll('.sidebar-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      apply();
+      try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch { /* storage unavailable */ }
+    });
   });
 }
 
@@ -948,6 +1089,32 @@ async function loadSfGeo() {
 // SF map init + render
 // ---------------------------------------------------------------------------
 let sfZoom = null;
+let sfInsetOffset = [0, 0];
+
+function sfFeatureName(feature) {
+  return feature.properties[sfNbhdNameKey] ?? '';
+}
+
+/** Shift for Treasure Island: keep its x, slide it down so its top lines up with the city's top edge. */
+function computeSfInsetOffset(mainland) {
+  const island = sfGeoData.features.find(f => sfFeatureName(f) === SF_INSET_FEATURE);
+  if (!island) return [0, 0];
+  const [[, cityTop]] = sfPathGen.bounds({ type: 'FeatureCollection', features: mainland });
+  const [[, islandTop]] = sfPathGen.bounds(island);
+  return [0, cityTop - islandTop];
+}
+
+function sfOffsetFor(feature) {
+  return sfFeatureName(feature) === SF_INSET_FEATURE ? sfInsetOffset : [0, 0];
+}
+
+/** Fill for a neighborhood: dark when empty, dim → bright gold as the count grows. */
+function sfFill(count, maxCount) {
+  if (count === 0) return 'hsl(35, 80%, 8%)';
+  // Wide lightness range so 2 people and 13 people look clearly different
+  const t = Math.pow(count / maxCount, 0.75);
+  return `hsl(${(28 + 10 * t).toFixed(1)}, 90%, ${(17 + 45 * t).toFixed(1)}%)`;
+}
 
 function initSfMap() {
   const wrap = document.getElementById('sf-map-wrap');
@@ -968,10 +1135,14 @@ function initSfMap() {
       .attr('width', w)
       .attr('height', h);
 
-    // Fit with padding so edge neighborhoods (Outer Sunset, Bayview, etc.) aren't clipped
+    // Fit with padding so edge neighborhoods (Outer Sunset, Bayview, etc.) aren't clipped.
+    // Treasure Island is left out of the fit and moved in afterwards.
     const pad = 24;
-    sfProjection = d3.geoMercator().fitExtent([[pad, pad], [w - pad, h - pad]], sfGeoData);
+    const mainland = sfGeoData.features.filter(f => sfFeatureName(f) !== SF_INSET_FEATURE);
+    sfProjection = d3.geoMercator().fitExtent([[pad, pad], [w - pad, h - pad]],
+      { type: 'FeatureCollection', features: mainland });
     sfPathGen = d3.geoPath().projection(sfProjection);
+    sfInsetOffset = computeSfInsetOffset(mainland);
 
     // Zoom/pan container — zoom transforms go here, not on SVG root
     sfSvg.append('g').attr('class', 'sf-zoom-g');
@@ -1006,18 +1177,19 @@ function renderSfMap(state) {
 
   // Pass 1: draw all polygon fills and borders
   for (const feature of features) {
-    const geoName   = feature.properties[sfNbhdNameKey] ?? '';
+    const geoName   = sfFeatureName(feature);
     const canonical = SF_GEO_TO_CANONICAL[geoName] ?? geoName;
     const count     = Number(sfCounts[canonical] || 0);
     const prevCount = Number(prevSfCounts[canonical] || 0);
-    const didIncrease = previousState !== null && count > prevCount;
+    const isPark = SF_PARKS.has(canonical);
+    const didIncrease = !isPark && previousState !== null && count > prevCount;
 
-    const fill = count === 0
-      ? 'hsl(35, 80%, 8%)'
-      : `hsl(35, 90%, ${(38 + 27 * Math.sqrt(count / maxCount)).toFixed(1)}%)`;
+    const fill = isPark ? SF_PARK_FILL : sfFill(count, maxCount);
+    const [ox, oy] = sfOffsetFor(feature);
 
     const path = g.append('path')
       .attr('d', sfPathGen(feature))
+      .attr('transform', ox || oy ? `translate(${ox},${oy})` : null)
       .attr('fill', didIncrease ? (prevCount === 0 ? 'hsl(35, 100%, 72%)' : 'hsl(35, 100%, 58%)') : fill)
       .attr('stroke', 'rgba(255,255,255,0.12)')
       .attr('stroke-width', 0.8);
@@ -1026,6 +1198,14 @@ function renderSfMap(state) {
       path.transition().duration(prevCount === 0 ? 1800 : 1200).attr('fill', fill);
     }
   }
+
+  // Label size follows the drawn map, so text keeps its proportions on a laptop or a TV
+  const [[x0], [x1]] = sfPathGen.bounds(sfGeoData);
+  const nameSize = Math.max(9, Math.min(15, (x1 - x0) * 0.0115));
+  const countSize = nameSize * 1.1;
+
+  // Partner dots go under the labels so they never hide a neighborhood name
+  renderSfPartners(g);
 
   // Pass 2: draw all labels on top of borders
   // Label each canonical name once, on the polygon that carries that exact
@@ -1048,15 +1228,50 @@ function renderSfMap(state) {
       const centroid = sfPathGen.centroid(feature);
       if (isNaN(centroid[0])) continue;
       const [dx, dy] = SF_LABEL_OFFSETS[canonical] ?? [0, 0];
-      const noCount = SF_NO_COUNT.has(canonical);
-      const lg = g.append('g').attr('transform', `translate(${centroid[0] + dx},${centroid[1] + dy})`);
-      lg.append('text').attr('class', count > 0 ? 'sf-nbhd-label active' : 'sf-nbhd-label').attr('text-anchor', 'middle').attr('dy', noCount ? '0.3em' : '-0.3em').text(canonical);
-      if (!noCount) lg.append('text').attr('class', count > 0 ? 'sf-nbhd-count active' : 'sf-nbhd-count').attr('text-anchor', 'middle').attr('dy', '1em').text(count);
+      const [ox, oy] = sfOffsetFor(feature);
+      const noCount = SF_PARKS.has(canonical);
+      const active = noCount ? ' park' : count > 0 ? ' active' : '';
+      const lg = g.append('g').attr('transform', `translate(${centroid[0] + dx + ox},${centroid[1] + dy + oy})`);
+
+      const name = lg.append('text')
+        .attr('class', 'sf-nbhd-label' + active)
+        .attr('text-anchor', 'middle')
+        .style('font-size', `${nameSize}px`);
+      // Long "A/B" names that overflow their neighborhood go on one line per part
+      let lines = [canonical];
+      name.text(canonical);
+      const [[bx0], [bx1]] = sfPathGen.bounds(feature);
+      if (canonical.includes('/') && name.node().getComputedTextLength() > (bx1 - bx0) * 0.9) {
+        lines = canonical.split('/');
+        name.text(null);
+      }
+
+      // Stack name lines and the count around the label point
+      const lineH = nameSize * 1.1;
+      const blockH = lines.length * lineH + (noCount ? 0 : countSize * 1.05);
+      let y = -blockH / 2 + lineH / 2;
+      if (lines.length > 1) {
+        for (const line of lines) {
+          name.append('tspan').attr('x', 0).attr('y', y).attr('dy', '0.35em').text(line);
+          y += lineH;
+        }
+      } else {
+        name.attr('y', y).attr('dy', '0.35em');
+        y += lineH;
+      }
+      if (!noCount) {
+        lg.append('text')
+          .attr('class', 'sf-nbhd-count' + active)
+          .attr('text-anchor', 'middle')
+          .attr('y', y - lineH / 2 + countSize * 0.55)
+          .attr('dy', '0.35em')
+          .style('font-size', `${countSize}px`)
+          .text(count);
+      }
     }
   }
 
   renderSfSidebar(state);
-  renderSfPartners(g);
 }
 
 function positionSfTooltip(tooltip, event, wrapRect) {
@@ -1096,9 +1311,6 @@ function renderSfPartners(g) {
     pg.append('circle').attr('class', 'sf-partner-ring').attr('r', 7);
     // Filled dot
     pg.append('circle').attr('class', 'sf-partner-dot').attr('r', 4);
-    // Plus icon
-    pg.append('line').attr('class', 'sf-partner-cross').attr('x1', 0).attr('y1', -2.2).attr('x2', 0).attr('y2', 2.2);
-    pg.append('line').attr('class', 'sf-partner-cross').attr('x1', -2.2).attr('y1', 0).attr('x2', 2.2).attr('y2', 0);
 
     // Invisible enlarged hit target
     pg.append('circle')

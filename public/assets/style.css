@@ -15,6 +15,8 @@
   --amber-dim: #c47f10;
   --amber-glow: rgba(255, 160, 30, 0.6);
   --teal: #00e5c8;
+  /* SF partner markers: bright cyan, the complement of the gold fills, distinct from the green parks */
+  --partner: var(--city);
   /* place-type colours, shared by map + sidebar: countries amber, cities cyan, regions lavender */
   --city: #3de8ff;
   --region: #b48cff;
@@ -50,8 +52,8 @@ html, body {
 
 #map-panel {
   position: relative;
-  flex: 0 0 75%;
-  width: 75%;
+  flex: 1 1 0;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -77,12 +79,23 @@ html, body {
 
 #map-title {
   text-wrap: balance;
-  font-size: clamp(36px, 3vw, 84px);
+  font-size: clamp(30px, 2.5vw, 70px);
   font-weight: 800;
   color: var(--white);
   letter-spacing: 0.03em;
   text-shadow: 0 0 24px rgba(255, 255, 255, 0.3);
   line-height: 1.15;
+}
+
+/* TV: keep the title on one line, sized to the header's width between the
+   QR gutters (~23.5em wide in Segoe UI 800, so 4cqi leaves a small margin) */
+body.mode-tv #map-header {
+  container-type: inline-size;
+}
+
+body.mode-tv #map-title {
+  white-space: nowrap;
+  font-size: min(3vw, 4cqi);
 }
 
 #map-subtitle {
@@ -191,6 +204,27 @@ html, body {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* Key for the green park fill — swatch matches SF_PARK_FILL in world.js */
+#sf-legend {
+  position: absolute;
+  bottom: 28px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(12px, 0.75vw, 18px);
+  color: var(--white-dim);
+  pointer-events: none;
+}
+
+.sf-legend-swatch {
+  width: 1em;
+  height: 1em;
+  border-radius: 3px;
+  background: hsl(140, 25%, 14%);
+  border: 1px solid hsl(140, 30%, 35%);
 }
 
 #sf-attribution {
@@ -469,6 +503,7 @@ html, body {
    ============================================================ */
 
 #leaderboard-panel {
+  position: relative;
   flex: 0 0 25%;
   width: 25%;
   height: 100%;
@@ -881,8 +916,8 @@ body {
 
 #sf-map-panel {
   position: relative;
-  flex: 0 0 75%;
-  width: 75%;
+  flex: 1 1 0;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -941,6 +976,7 @@ body {
 }
 
 #sf-sidebar {
+  position: relative;
   flex: 0 0 25%;
   width: 25%;
   height: 100%;
@@ -977,31 +1013,36 @@ body {
   padding: 8px 0;
 }
 
-.sf-nbhd-label {
-  fill: rgba(255, 255, 255, 0.5);
-  font-size: 9px;
-  font-weight: 500;
+/* Font sizes are set inline from the map width */
+.sf-nbhd-label,
+.sf-nbhd-count {
   pointer-events: none;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-.sf-nbhd-count {
-  fill: rgba(255, 255, 255, 0.35);
-  font-size: 10px;
-  font-weight: 600;
-  pointer-events: none;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+.sf-nbhd-label {
+  fill: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
 }
 
 .sf-nbhd-label.active {
   fill: rgba(255, 255, 255, 0.95);
-  font-size: 10px;
   font-weight: 700;
 }
 
+.sf-nbhd-count {
+  fill: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+}
+
+.sf-nbhd-label.park {
+  fill: hsl(140, 30%, 55%);
+  font-weight: 500;
+}
+
+/* counts in white, not amber, so they don't vanish into the gold fills */
 .sf-nbhd-count.active {
-  fill: var(--amber);
-  font-size: 11px;
+  fill: var(--white);
   font-weight: 700;
 }
 
@@ -1037,9 +1078,9 @@ body {
 }
 
 .sf-overlay-btn {
-  background: rgba(0, 229, 200, 0.08);
-  border: 1px solid rgba(0, 229, 200, 0.3);
-  color: rgba(0, 229, 200, 0.5);
+  background: rgba(61, 232, 255, 0.08);
+  border: 1px solid rgba(61, 232, 255, 0.3);
+  color: rgba(61, 232, 255, 0.5);
   border-radius: 20px;
   padding: 4px 14px;
   font-size: 13px;
@@ -1050,16 +1091,16 @@ body {
 }
 
 .sf-overlay-btn.active {
-  background: rgba(0, 229, 200, 0.15);
-  border-color: var(--teal);
-  color: var(--teal);
-  box-shadow: 0 0 8px rgba(0, 229, 200, 0.25);
+  background: rgba(61, 232, 255, 0.15);
+  border-color: var(--partner);
+  color: var(--partner);
+  box-shadow: 0 0 8px rgba(61, 232, 255, 0.25);
 }
 
 .sf-overlay-btn:hover {
-  background: rgba(0, 229, 200, 0.2);
-  border-color: var(--teal);
-  color: var(--teal);
+  background: rgba(61, 232, 255, 0.2);
+  border-color: var(--partner);
+  color: var(--partner);
 }
 
 /* ============================================================
@@ -1068,27 +1109,23 @@ body {
 
 .sf-partner-ring {
   fill: none;
-  stroke: var(--teal);
+  stroke: var(--partner);
   stroke-width: 1.2;
-  opacity: 0.45;
+  opacity: 0.7;
   transition: opacity 0.2s, r 0.2s;
 }
 
 .sf-partner-dot {
-  fill: var(--teal);
-  opacity: 0.85;
+  fill: var(--partner);
+  /* dark edge keeps the dot visible on the brightest gold fills */
+  stroke: var(--navy);
+  stroke-width: 1;
+  opacity: 0.95;
   transition: opacity 0.2s, r 0.2s;
 }
 
-.sf-partner-cross {
-  stroke: var(--navy);
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  pointer-events: none;
-}
-
 .sf-partner-hit {
-  cursor: pointer;
+  cursor: default; /* hover-only: shows the tooltip, nothing to click */
 }
 
 /* Hover state */
@@ -1096,7 +1133,7 @@ body {
   opacity: 1;
   r: 9;
   stroke-width: 1.8;
-  filter: drop-shadow(0 0 5px rgba(0, 229, 200, 0.7));
+  filter: drop-shadow(0 0 5px rgba(61, 232, 255, 0.7));
 }
 
 .sf-partner-g--hover .sf-partner-dot {
@@ -1114,10 +1151,10 @@ body {
   pointer-events: none;
   z-index: 20;
   background: rgba(13, 31, 60, 0.95);
-  border: 1px solid rgba(0, 229, 200, 0.5);
+  border: 1px solid rgba(61, 232, 255, 0.5);
   border-radius: 8px;
   padding: 8px 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 229, 200, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(61, 232, 255, 0.15);
   max-width: 220px;
 }
 
@@ -1128,7 +1165,7 @@ body {
 .spt-name {
   font-size: 13px;
   font-weight: 700;
-  color: var(--teal);
+  color: var(--partner);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1159,4 +1196,197 @@ body {
   stroke-width: 0.8;
   filter: drop-shadow(0 0 6px rgba(255, 160, 30, 0.9));
   pointer-events: none;
+}
+
+/* ============================================================
+   Display modes — body.mode-tv (/tv) and body.mode-desktop
+   ============================================================ */
+
+.mode-btn {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.18s, background 0.18s, opacity 0.3s;
+}
+
+.mode-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Desktop: TV icon at the right end of the nav bar */
+#mode-to-tv {
+  margin-left: auto;
+  width: 32px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+#mode-to-tv:hover {
+  color: var(--amber);
+  background: rgba(255, 180, 60, 0.08);
+}
+
+/* TV: same box as the desktop nav's TV icon (40px nav, 16px side padding),
+   nearly invisible — shows only when the cursor finds it */
+#mode-to-desktop {
+  position: fixed;
+  top: 5.5px; /* the nav centres within 39px: 40px minus its 1px bottom border */
+  right: 16px;
+  z-index: 200;
+  width: 32px;
+  height: 28px;
+  border-radius: 4px;
+  opacity: 0.06;
+}
+
+#mode-to-desktop:hover,
+#mode-to-desktop:focus-visible {
+  opacity: 0.8;
+}
+
+body.mode-desktop #mode-to-desktop,
+body.mode-tv #app-nav,
+body.mode-tv .sidebar-toggle,
+body.mode-tv #sf-overlay-controls {
+  display: none;
+}
+
+/* TV SF sidebar: like the world list — no scrollbar, rows past the bottom fade out */
+body.mode-tv #sf-lb-body {
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 calc(100% - 60px), transparent);
+}
+
+/* Desktop sidebar: every row, scrollable, no fade-out */
+body.mode-desktop .lb-list,
+body.mode-desktop #sf-lb-body {
+  overflow-y: auto;
+  mask-image: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Collapse toggle: chevron in the sidebar's top-right corner */
+.sidebar-toggle {
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+
+.sidebar-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: translateX(-2px) rotate(45deg); /* › collapse to the right */
+}
+
+.sidebar-toggle:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.mode-desktop.sidebar-collapsed #leaderboard-panel,
+body.mode-desktop.sidebar-collapsed #sf-sidebar {
+  flex-basis: 48px;
+}
+
+body.mode-desktop.sidebar-collapsed #leaderboard-panel > :not(.sidebar-toggle),
+body.mode-desktop.sidebar-collapsed #sf-sidebar > :not(.sidebar-toggle) {
+  display: none;
+}
+
+body.mode-desktop.sidebar-collapsed .sidebar-toggle::before {
+  transform: translateX(2px) rotate(-135deg); /* ‹ expand */
+}
+
+/* ============================================================
+   World map tooltip (desktop only)
+   ============================================================ */
+
+body.mode-desktop .country-marker {
+  pointer-events: auto;
+}
+
+.city-hit {
+  fill: transparent;
+}
+
+body.mode-tv .city-hit {
+  pointer-events: none;
+}
+
+.country-path.hover {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 1;
+}
+
+.city-dot.hover {
+  stroke: var(--white);
+}
+
+#map-tooltip {
+  --tt-color: var(--amber);
+  position: absolute;
+  z-index: 20;
+  display: none;
+  pointer-events: none;
+  background: rgba(13, 31, 60, 0.98);
+  border: 1px solid color-mix(in srgb, var(--tt-color) 55%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+#map-tooltip.visible {
+  display: block;
+}
+
+#map-tooltip.type-city {
+  --tt-color: var(--city);
+}
+
+.mt-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tt-color);
+}
+
+.mt-count {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--white-dim);
+}
+
+.mt-count b {
+  color: var(--white);
+}
+
+/* keep header text clear of the collapse toggle */
+body.mode-desktop #leaderboard-header,
+body.mode-desktop #sf-lb-header {
+  padding-right: 48px;
 }

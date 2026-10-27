@@ -12,7 +12,15 @@
   <div id="app-nav">
     <button class="app-tab active" data-view="world">🌍 World Map</button>
     <button class="app-tab" data-view="sf">🌉 San Francisco</button>
+    <button id="mode-to-tv" class="mode-btn" title="Switch to TV display" aria-label="Switch to TV display">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </button>
   </div>
+
+  <!-- TV mode: near-invisible way back to the desktop view -->
+  <button id="mode-to-desktop" class="mode-btn" title="Switch to desktop view" aria-label="Switch to desktop view">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M2 20h20"/></svg>
+  </button>
 
   <!-- ====== World view ====== -->
   <div id="world-view" class="app-view active">
@@ -22,7 +30,7 @@
       <div id="map-panel">
         <div id="map-header">
           <div id="map-eyebrow">RealitySF Global Discovery</div>
-          <div id="map-title">Neighbors &amp; Nations</div>
+          <div id="map-title">Neighbors &amp; Nations: Our Global Heartbeat</div>
           <div id="map-subtitle">Mercy makes us neighbors</div>
           <div id="people-counter">
             <span class="count-number" id="people-count">0</span>
@@ -44,6 +52,7 @@
           <div class="ocean-lb" id="olb-countries" data-lb-type="countries"></div>
           <div class="ocean-lb" id="olb-cities" data-lb-type="cities"></div>
           <div class="ocean-lb" id="olb-regions" data-lb-type="regions"></div>
+          <div id="map-tooltip"></div>
         </div>
         <!-- Top heartbeats: footer row of the map panel -->
         <div id="heartbeat-band"></div>
@@ -51,6 +60,7 @@
 
       <!-- Leaderboard panel (25%) -->
       <div id="leaderboard-panel">
+        <button class="sidebar-toggle" title="Collapse list" aria-label="Collapse list"></button>
         <div id="leaderboard-header">
           <div id="leaderboard-title">Our Congregation</div>
           <div id="leaderboard-total">
@@ -96,11 +106,13 @@
           <!-- SF map SVG injected by world.js -->
           <div id="sf-partner-tooltip"></div>
         </div>
+        <div id="sf-legend"><span class="sf-legend-swatch"></span>Parks</div>
         <div id="sf-attribution">Neighborhood boundaries: SF Planning Dept &mdash; <a href="https://data.sf.gov/Geographic-Locations-and-Boundaries/Analysis-Neighborhoods/p5b7-5n3h" target="_blank" rel="noopener">DataSF Analysis Neighborhoods</a></div>
       </div>
 
       <!-- SF sidebar (25%) -->
       <div id="sf-sidebar">
+        <button class="sidebar-toggle" title="Collapse list" aria-label="Collapse list"></button>
         <div id="sf-lb-header">
           <div id="sf-lb-title">Neighborhoods</div>
           <div id="sf-lb-total">

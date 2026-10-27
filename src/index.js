@@ -197,6 +197,8 @@ app.post('/webhooks/planning-center', express.raw({ type: '*/*', limit: '1mb' })
 app.get('/', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/world', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/sf', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
+app.get('/tv', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
+app.get('/tv/sf', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/status', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'status.html')));
 
 // API: current state as JSON
