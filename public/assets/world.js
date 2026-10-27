@@ -59,7 +59,7 @@ const SIDEBAR_MAX_ROWS = 40;
 const SF_GEO_TO_CANONICAL = {
   'West of Twin Peaks':  'West Portal/Forest Hill',
   'Lone Mountain/USF':   'Lone Mountain/NOPA',
-  'Outer Mission':       'Mission',  // not in the form dropdown; glows with Mission
+  'Outer Mission':       'Excelsior',  // not in the form dropdown; glows with its neighbor Excelsior
 };
 
 // Manual label position offsets [dx, dy] in SVG pixels for awkward centroids.
@@ -1108,12 +1108,13 @@ function sfOffsetFor(feature) {
   return sfFeatureName(feature) === SF_INSET_FEATURE ? sfInsetOffset : [0, 0];
 }
 
-/** Fill for a neighborhood: dark when empty, dim → bright gold as the count grows. */
+/** Fill for a neighborhood: dark when empty, dim brown → vivid orange as the count grows. */
 function sfFill(count, maxCount) {
   if (count === 0) return 'hsl(35, 80%, 8%)';
-  // Wide lightness range so 2 people and 13 people look clearly different
+  // Saturation rises with lightness and the top stops at a vivid orange, not a pale
+  // gold, so the busiest neighborhood is also the one that stands out most
   const t = Math.pow(count / maxCount, 0.75);
-  return `hsl(${(28 + 10 * t).toFixed(1)}, 90%, ${(17 + 45 * t).toFixed(1)}%)`;
+  return `hsl(${(32 - 6 * t).toFixed(1)}, ${(65 + 35 * t).toFixed(1)}%, ${(16 + 34 * t).toFixed(1)}%)`;
 }
 
 function initSfMap() {

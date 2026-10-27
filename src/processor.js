@@ -510,7 +510,7 @@ const SF_NBHD_ALIASES = {
   // Mission
   'the mission':                    'Mission',
   'mission district':               'Mission',
-  'outer mission':                  'Mission',  // map glows Outer Mission with Mission
+  'outer mission':                  'Excelsior',  // map glows Outer Mission with Excelsior
   // Haight
   'haight':                         'Haight Ashbury',
   'haight-ashbury':                 'Haight Ashbury',
