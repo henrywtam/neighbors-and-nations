@@ -1441,10 +1441,10 @@ body.mode-desktop #sf-lb-header {
     border-bottom: 1px solid var(--border);
   }
 
-  /* the chips share the width and shrink their text on very narrow phones, so the
-     bar never needs to scroll */
+  /* equal-width chips that shrink their text on very narrow phones, so the bar
+     never needs to scroll */
   .ps-chip {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
     padding: 7px 4px;
     border: 1px solid rgba(255, 255, 255, 0.14);
