@@ -31,6 +31,8 @@ let cache = null;
 
 /** Whether the last Sheets check succeeded (drives the Live/Reconnecting badge). */
 let sheetsHealthy = true;
+/** Last successful sheet check, changed or not — the dashboard shows it as "Updated …" */
+let lastCheckedAt = null;
 
 // ---------------------------------------------------------------------------
 // SSE helpers
@@ -52,6 +54,7 @@ function serializeState(state) {
       [...state.vocationCounts.entries()].map(([k, v]) => [k, v])
     ),
     readAt: state.readAt?.toISOString() ?? null,
+    checkedAt: lastCheckedAt?.toISOString() ?? null,
   };
 }
 
@@ -92,10 +95,13 @@ function markHealthy(ok, err) {
 async function checkSheet() {
   try {
     const changed = await cache.checkForUpdates();
+    lastCheckedAt = new Date();
     markHealthy(true);
     if (changed) {
       console.log(`[index] Sheet has new rows (now ${cache.rowCount}).`);
       rebuildState();
+    } else {
+      pushSseEvent({ type: 'checked', checkedAt: lastCheckedAt.toISOString() });
     }
     return true;
   } catch (err) {

@@ -1308,18 +1308,21 @@ body.mode-desktop #sf-lb-body {
   background: rgba(255, 255, 255, 0.06);
 }
 
-body.mode-desktop.sidebar-collapsed #leaderboard-panel,
-body.mode-desktop.sidebar-collapsed #sf-sidebar {
-  flex-basis: 48px;
-}
+/* Wide screens only: on phones the lists stack under the map and can't collapse */
+@media (min-width: 761px) {
+  body.mode-desktop.sidebar-collapsed #leaderboard-panel,
+  body.mode-desktop.sidebar-collapsed #sf-sidebar {
+    flex-basis: 48px;
+  }
 
-body.mode-desktop.sidebar-collapsed #leaderboard-panel > :not(.sidebar-toggle),
-body.mode-desktop.sidebar-collapsed #sf-sidebar > :not(.sidebar-toggle) {
-  display: none;
-}
+  body.mode-desktop.sidebar-collapsed #leaderboard-panel > :not(.sidebar-toggle),
+  body.mode-desktop.sidebar-collapsed #sf-sidebar > :not(.sidebar-toggle) {
+    display: none;
+  }
 
-body.mode-desktop.sidebar-collapsed .sidebar-toggle::before {
-  transform: translateX(2px) rotate(-135deg); /* ‹ expand */
+  body.mode-desktop.sidebar-collapsed .sidebar-toggle::before {
+    transform: translateX(2px) rotate(-135deg); /* ‹ expand */
+  }
 }
 
 /* ============================================================
@@ -1389,4 +1392,265 @@ body.mode-tv .city-hit {
 body.mode-desktop #leaderboard-header,
 body.mode-desktop #sf-lb-header {
   padding-right: 48px;
+}
+
+/* Phone-only controls — hidden on the TV and desktop */
+#phone-sections,
+#lb-more {
+  display: none;
+}
+
+/* ============================================================
+   Phones (≤ 760px) — world page only, one scrolling column:
+   map, heartbeats, then the lists. Sticky section chips up top.
+   The TV and desktop layouts never hit this width, so they're unaffected.
+   ============================================================ */
+
+@media (max-width: 760px) {
+  /* The window scrolls (not body), so the section chips can stick to the top */
+  html, body {
+    height: auto;
+    min-height: 100%;
+  }
+
+  html {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    overflow: visible;
+  }
+
+  /* World/SF tabs and the TV switch give way to the section chips */
+  #app-nav,
+  #sf-view,
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  #phone-sections {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    gap: 5px;
+    padding: 8px;
+    background: color-mix(in srgb, var(--navy) 92%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* the chips share the width and shrink their text on very narrow phones, so the
+     bar never needs to scroll */
+  .ps-chip {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 7px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font: inherit;
+    font-size: clamp(11px, 3.5vw, 14px);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .ps-chip.active {
+    border-color: var(--amber);
+    background: rgba(255, 180, 60, 0.14);
+    color: var(--amber);
+  }
+
+  /* One section at a time, picked by the chips (body[data-phone-section] set in world.js) */
+  body[data-phone-section="map"] #leaderboard-panel,
+  body[data-phone-section="lists"] #map-panel,
+  #leaderboard-tabs {
+    display: none !important;
+  }
+
+  .app-view,
+  #world-layout,
+  #map-panel,
+  #leaderboard-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  #world-layout {
+    flex-direction: column;
+  }
+
+  #leaderboard-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: calc(100vh - 52px);
+    border-left: none;
+  }
+
+  /* Header */
+  #map-header {
+    padding: 16px 16px 6px;
+  }
+
+  #map-eyebrow {
+    font-size: 11px;
+  }
+
+  #map-title {
+    font-size: 26px;
+  }
+
+  #map-subtitle {
+    font-size: 15px;
+  }
+
+  #people-counter {
+    font-size: 14px;
+  }
+
+  #people-counter .count-number {
+    font-size: 26px;
+  }
+
+  /* No point scanning a QR code on the phone it's shown on — make it a button */
+  #survey-qr {
+    position: static;
+    align-self: center;
+    margin: 4px 0 12px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: var(--amber);
+  }
+
+  #survey-qr img {
+    display: none;
+  }
+
+  /* "Scan to…" makes no sense on the phone itself; swap the wording */
+  .survey-qr-label {
+    font-size: 0;
+  }
+
+  .survey-qr-label::after {
+    content: 'Share your heart →';
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  /* Map: Natural Earth is ~1.95:1. The live badge hangs just below it, clear of the map */
+  #map-svg-wrap {
+    flex: 0 0 auto;
+    height: 54vw;
+    margin-bottom: 36px;
+    overflow: visible;
+  }
+
+  #live-indicator {
+    top: calc(100% + 6px);
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    font-size: 12px;
+  }
+
+  #live-indicator .live-info {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  /* The ocean cards repeat the Places list below and are unreadable at this size */
+  .ocean-lb {
+    display: none;
+  }
+
+  /* City dots are just specks at this size; countries carry the map, cities are in Places */
+  #map-svg g.cities {
+    display: none;
+  }
+
+  /* Heartbeats: title on top, then one item per line */
+  #heartbeat-band {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-top: 0;
+    padding: 20px 16px 24px;
+  }
+
+  .hb-title {
+    max-width: none;
+    padding: 0 0 8px;
+    border-right: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--heart) 35%, transparent);
+    font-size: 12px;
+  }
+
+  .hb-items {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hb-item {
+    max-width: 100%;
+  }
+
+  .hb-rank {
+    --hs: 30px;
+  }
+
+  .hb-name {
+    font-size: 16px;
+  }
+
+  /* Lists: the page scrolls, so each list is as tall as its rows — top 10 until expanded */
+  #leaderboard-body {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .lb-list {
+    position: static;
+    display: none;
+    overflow: visible;
+    mask-image: none;
+  }
+
+  .lb-list.active {
+    display: block;
+  }
+
+  .lb-list:not(.expanded) > .lb-row:nth-child(n + 11) {
+    display: none;
+  }
+
+  #lb-more:not([hidden]) {
+    display: block;
+    margin: 4px 20px 24px;
+    width: calc(100% - 40px);
+    padding: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--white);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  #leaderboard-title {
+    font-size: 22px;
+  }
+
+  .lb-tab {
+    font-size: 14px;
+  }
+
+  body.mode-desktop #leaderboard-header {
+    padding-right: 20px;
+  }
 }

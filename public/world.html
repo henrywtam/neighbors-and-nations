@@ -17,6 +17,14 @@
     </button>
   </div>
 
+  <!-- Phone only: jump between the world page's sections (sticky, so always one tap away) -->
+  <nav id="phone-sections" aria-label="Sections">
+    <button class="ps-chip active" data-section="map">Map</button>
+    <button class="ps-chip" data-section="lists" data-tab="0">Places</button>
+    <button class="ps-chip" data-section="lists" data-tab="1">Issues</button>
+    <button class="ps-chip" data-section="lists" data-tab="2">Vocations</button>
+  </nav>
+
   <!-- TV mode: near-invisible way back to the desktop view -->
   <button id="mode-to-desktop" class="mode-btn" title="Switch to desktop view" aria-label="Switch to desktop view">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M2 20h20"/></svg>
@@ -77,6 +85,8 @@
           <div class="lb-list" id="lb-heartbeats"></div>
           <div class="lb-list" id="lb-vocations"></div>
         </div>
+        <!-- Phone only: lists show the top 10 until expanded -->
+        <button id="lb-more" hidden></button>
       </div>
 
     </div>

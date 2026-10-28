@@ -159,7 +159,14 @@ const TAB_ROTATE_MS = 5000;
 // 'desktop' (everything else — nav, scrollable/collapsible sidebar, map tooltips)
 let displayMode = isTvPath(location.pathname) ? 'tv' : 'desktop';
 
+// Phones get a single scrolling world page: desktop mode (no rotating tabs or
+// fade-out lists, even on a /tv link) and no SF view
+function isPhone() {
+  return window.matchMedia('(max-width: 760px)').matches;
+}
+
 function isTvPath(path) {
+  if (isPhone()) return false;
   return path === '/tv' || path.startsWith('/tv/');
 }
 
@@ -197,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadTopo();
   setupLeaderboardTabs();
+  setupPhoneSections();
   startTabRotation();
   setupResizeObserver();
   setupAppTabs();
@@ -216,6 +224,7 @@ function setupSSE() {
     if (msg.type === 'state') handleStateMessage(msg);
     if (msg.type === 'error') showReconnecting();
     if (msg.type === 'live') showLive();
+    if (msg.type === 'checked') setCheckedTime(msg.checkedAt);
   };
   evtSource.onerror = () => showReconnecting();
   evtSource.onopen = () => showLive();
@@ -226,6 +235,15 @@ function formatPulledTime(isoString) {
   const d = new Date(isoString);
   if (isNaN(d)) return '';
   return 'Updated ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+/** The server checks the sheet every 30s; show the latest check, not the latest change. */
+function setCheckedTime(isoString) {
+  const text = formatPulledTime(isoString);
+  for (const id of ['last-pulled', 'sf-last-pulled']) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
 }
 
 function showLive() {
@@ -407,11 +425,7 @@ function updateHeader(state) {
     }
   }
 
-  const pulledText = formatPulledTime(state.readAt);
-  const worldPulled = document.getElementById('last-pulled');
-  if (worldPulled) worldPulled.textContent = pulledText;
-  const sfPulled = document.getElementById('sf-last-pulled');
-  if (sfPulled) sfPulled.textContent = pulledText;
+  setCheckedTime(state.checkedAt ?? state.readAt);
 }
 
 // ---------------------------------------------------------------------------
@@ -731,7 +745,7 @@ function setActiveTab(idx) {
   });
   document.querySelectorAll('.lb-list').forEach((l, i) => {
     l.classList.toggle('active', i === idx);
-  });
+  });  updateMoreButton();
 }
 
 function renderLeaderboard(state) {
@@ -748,7 +762,56 @@ function renderLeaderboard(state) {
 
   renderPlacesList(state, total);
   renderHeartbeatList(state, total);
-  renderVocationList(state, total);
+  renderVocationList(state, total);  updateMoreButton();
+}
+
+// ---------------------------------------------------------------------------
+// Phone: section chips and "Show N more" (both hidden by CSS on wider screens)
+// ---------------------------------------------------------------------------
+const PHONE_LIST_ROWS = 10;
+const expandedLists = new Set(); // ids of lists showing every row
+
+/** Sync the button under the lists with the active list: "Show 23 more" / "Show less". */
+function updateMoreButton() {
+  const btn = document.getElementById('lb-more');
+  const list = document.querySelector('.lb-list.active');
+  if (!btn || !list) return;
+  document.querySelectorAll('.lb-list').forEach(l => l.classList.toggle('expanded', expandedLists.has(l.id)));
+  const extra = list.querySelectorAll('.lb-row').length - PHONE_LIST_ROWS;
+  btn.hidden = extra <= 0;
+  btn.textContent = expandedLists.has(list.id) ? 'Show less' : `Show ${extra} more`;
+}
+
+/** Phone: show one section at a time — 'map' (with the hearts) or 'lists' (with the matching tab). */
+function showPhoneSection(section, tab) {
+  document.body.dataset.phoneSection = section;
+  if (tab !== undefined) setActiveTab(tab);
+  document.querySelectorAll('.ps-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.section === section &&
+      (section !== 'lists' || Number(chip.dataset.tab) === leaderboardTab));
+  });
+  window.scrollTo(0, 0);
+}
+
+function setupPhoneSections() {
+  document.querySelectorAll('.ps-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      showPhoneSection(chip.dataset.section, chip.dataset.tab !== undefined ? Number(chip.dataset.tab) : undefined);
+    });
+  });
+  document.body.dataset.phoneSection = 'map';
+
+  document.getElementById('lb-more')?.addEventListener('click', () => {
+    const list = document.querySelector('.lb-list.active');
+    if (!list) return;
+    if (expandedLists.has(list.id)) {
+      expandedLists.delete(list.id);
+      window.scrollTo(0, 0);
+    } else {
+      expandedLists.add(list.id);
+    }
+    updateMoreButton();
+  });
 }
 
 function renderPlacesList(state, total) {
@@ -1017,7 +1080,7 @@ function setupAppTabs() {
   });
 
   // Pathname-based routing: read on load, follow browser back/forward
-  if (viewFromPath(location.pathname) === 'sf') switchView('sf', false);
+  if (viewFromPath(location.pathname) === 'sf' && !isPhone()) switchView('sf', false);
 
   window.addEventListener('popstate', () => {
     setDisplayMode(isTvPath(location.pathname) ? 'tv' : 'desktop', false);
