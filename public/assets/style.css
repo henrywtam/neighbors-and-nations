@@ -1567,8 +1567,10 @@ body.mode-desktop #sf-lb-header {
     display: none;
   }
 
-  /* City dots are just specks at this size; countries carry the map, cities are in Places */
-  #map-svg g.cities {
+  /* No dots on phones: city dots are just specks (cities are in Places), and tiny
+     countries show as their own lit shape like every other country */
+  #map-svg g.cities,
+  #map-svg g.country-markers {
     display: none;
   }
 
