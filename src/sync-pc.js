@@ -94,7 +94,7 @@ export function mapToRow(sub, unmatchedItems = [], columns = SHEET_COLUMNS) {
   record['submitted_at'] = sub.created_at ?? '';
   record['submission_id'] = String(sub.id ?? '');
   record['email_key']     = emailKey(sub.emails?.[0]);  // primary email
-  record['is_test']      = (sub.emails ?? []).some(e => e.endsWith('@mac.com')) ? 'TRUE' : 'FALSE';
+  record['is_test']      = (sub.emails ?? []).some(e => String(e).trim().toLowerCase().endsWith('@mac.com')) ? 'TRUE' : 'FALSE';
 
   // No cap: the form asks for 3, but every box checked is kept
   const vocations = getAll(FIELD.VOCATIONS);

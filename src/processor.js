@@ -137,7 +137,7 @@ export function processResponses(sheetData, config, geonames) {
     // Filter: test rows
     // -----------------------------------------------------------------------
     if (!config.showTestRows) {
-      if (row.is_test === 'TRUE' || row.is_test === true) {
+      if (row.is_test === true || String(row.is_test ?? '').trim().toUpperCase() === 'TRUE') {
         continue;
       }
     }
