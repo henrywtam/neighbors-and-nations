@@ -9,6 +9,9 @@ import { processResponses } from './processor.js';
 import * as geonames from './geonames.js';
 import config from './config.js';
 import { syncPlanningCenter } from './sync-pc.js';
+import QRCode from 'qrcode';
+import { createGroupStore, publicGroup, memberList } from './groups.js';
+import { demoGroup, DEMO_MEMBER_COUNT } from './demo.js';
 
 const FORM_ID = process.env.PLANNING_CENTER_FORM_ID ?? '1335453';
 
@@ -25,9 +28,14 @@ let currentState = null;
 
 /** @type {Set<import('express').Response>} */
 const sseClients = new Set();
+/** Community Group screens, by group code */
+/** @type {Map<string, Set<import('express').Response>>} */
+const groupSseClients = new Map();
 
 /** @type {ReturnType<typeof createSheetCache> | null} */
 let cache = null;
+/** @type {ReturnType<typeof createGroupStore> | null} */
+let groups = null;
 
 /** Whether the last Sheets check succeeded (drives the Live/Reconnecting badge). */
 let sheetsHealthy = true;
@@ -63,6 +71,53 @@ function pushSseEvent(data) {
   for (const res of sseClients) {
     res.write(payload);
   }
+  // Group screens get their own state; everything else (live, checked, error) is shared
+  if (data.type !== 'state') {
+    for (const set of groupSseClients.values()) for (const res of set) res.write(payload);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Community Groups
+// ---------------------------------------------------------------------------
+
+/** Results for one group's roster, plus who has joined. */
+function groupState(g) {
+  const info = publicGroup(g);
+  const state = processResponses(cache.sheetData(), config, geonames, { emailKeys: groups.memberKeys(g.code) });
+  // Who has joined, newest first
+  const roster = memberList(g).map(m => ({ email: m.email }));
+  return {
+    type: 'state',
+    ...serializeState({ ...state, isLive: sheetsHealthy }),
+    group: info,
+    members: roster,
+  };
+}
+
+function pushGroupState(code) {
+  const set = groupSseClients.get(code);
+  const g = groups?.get(code);
+  if (!set?.size || !g || !cache) return;
+  const payload = `data: ${JSON.stringify(groupState(g))}\n\n`;
+  for (const res of set) res.write(payload);
+}
+
+function pushAllGroupStates() {
+  for (const code of groupSseClients.keys()) pushGroupState(code);
+}
+
+/** Base URL as the visitor sees it (Railway terminates TLS in front of us). */
+function baseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+function groupLinks(req, code) {
+  const base = baseUrl(req);
+  return {
+    screen: `${base}/cg/${code}`,
+    join: `${base}/join/${code}`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +128,7 @@ function rebuildState() {
   const newState = processResponses(cache.sheetData(), config, geonames);
   currentState = { ...newState, isLive: sheetsHealthy };
   pushSseEvent({ type: 'state', ...serializeState(currentState) });
+  pushAllGroupStates();
 }
 
 function markHealthy(ok, err) {
@@ -184,6 +240,7 @@ function isOurFormSubmission(body) {
 // ---------------------------------------------------------------------------
 
 const app = express();
+app.set('trust proxy', true);
 
 app.use(express.static(PUBLIC_DIR));
 
@@ -207,6 +264,88 @@ app.get('/tv', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/tv/sf', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/status', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'status.html')));
 
+// Community Group pages
+app.get('/start-group', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-start.html')));
+app.get(['/join', '/join/:code'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-join.html')));
+app.get('/cg/:code', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg.html')));
+
+// ---------------------------------------------------------------------------
+// Community Group API
+// ---------------------------------------------------------------------------
+
+function requireGroups(_req, res, next) {
+  if (!groups) return res.status(503).json({ error: 'Groups are not available right now. Try again in a minute.' });
+  next();
+}
+
+function sendError(res, err) {
+  if (err.status === 400) return res.status(400).json({ error: err.message });
+  console.error('[index] Group write failed:', err.message);
+  res.status(500).json({ error: 'Something went wrong saving that. Please try again.' });
+}
+
+app.post('/api/groups', express.json(), requireGroups, async (req, res) => {
+  try {
+    const g = await groups.create(req.body ?? {});
+    res.json({ group: publicGroup(g), links: groupLinks(req, g.code) });
+  } catch (err) { sendError(res, err); }
+});
+
+app.get('/api/groups/:code', requireGroups, (req, res) => {
+  const g = groups.get(req.params.code);
+  if (!g) return res.status(404).json({ error: "We couldn't find that group code." });
+  res.json({ group: publicGroup(g), links: groupLinks(req, g.code) });
+});
+
+app.post('/api/groups/:code/join', express.json(), requireGroups, async (req, res) => {
+  try {
+    const { group } = await groups.join(req.params.code, [req.body?.email]);
+    res.json({ group: publicGroup(group) });
+    pushGroupState(group.code);
+  } catch (err) { sendError(res, err); }
+});
+
+app.get('/api/groups/:code/state', requireGroups, (req, res) => {
+  const g = groups.get(req.params.code);
+  if (!g) return res.status(404).json({ error: "We couldn't find that group code." });
+  if (!cache) return res.status(503).json({ error: 'State not yet available' });
+  res.json(groupState(g));
+});
+
+// Demo mode for the CG page: the first ?joined= sample members, through the real processor
+app.get('/api/groups/:code/demo', (req, res) => {
+  if (!cache) return res.status(503).json({ error: 'State not yet available' });
+  const g = groups?.get(req.params.code);
+  const { responses, members } = demoGroup(parseInt(req.query.joined ?? DEMO_MEMBER_COUNT));
+  const state = processResponses({ ...cache.sheetData(), responses }, { ...config, showTestRows: false }, geonames);
+  res.json({
+    type: 'state',
+    ...serializeState({ ...state, isLive: true }),
+    group: g ? publicGroup(g) : { code: req.params.code.toUpperCase(), groupName: 'Sunset CG' },
+    members,
+    demoTotal: DEMO_MEMBER_COUNT,
+  });
+});
+
+// QR codes on the CG page: 1 takes the survey, 2 joins the group
+const SURVEY_URL = `https://realitysf.churchcenter.com/people/forms/${FORM_ID}`;
+
+async function sendQr(res, url) {
+  const svg = await QRCode.toString(url, {
+    type: 'svg', margin: 1, errorCorrectionLevel: 'M',
+    color: { dark: '#081330', light: '#F4EEE0' },
+  });
+  res.type('image/svg+xml').set('Cache-Control', 'public, max-age=3600').send(svg);
+}
+
+app.get('/api/qr/survey.svg', (_req, res) => sendQr(res, SURVEY_URL));
+
+app.get('/api/groups/:code/qr.svg', requireGroups, (req, res) => {
+  const g = groups.get(req.params.code);
+  if (!g) return res.sendStatus(404);
+  sendQr(res, groupLinks(req, g.code).join);
+});
+
 // API: current state as JSON
 app.get('/api/state', (_req, res) => {
   if (!currentState) {
@@ -222,12 +361,20 @@ app.get('/api/events', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
+  // ?group=CODE: a Community Group screen, sent only that group's results
+  const g = req.query.group ? groups?.get(String(req.query.group)) : null;
+  const clients = g
+    ? (groupSseClients.get(g.code) ?? groupSseClients.set(g.code, new Set()).get(g.code))
+    : sseClients;
+
   // Send current state immediately on connect
-  if (currentState) {
+  if (g && cache) {
+    res.write(`data: ${JSON.stringify(groupState(g))}\n\n`);
+  } else if (!g && currentState) {
     res.write(`data: ${JSON.stringify({ type: 'state', ...serializeState(currentState) })}\n\n`);
   }
 
-  sseClients.add(res);
+  clients.add(res);
 
   // Keep-alive ping every 15s
   const pingInterval = setInterval(() => {
@@ -236,7 +383,7 @@ app.get('/api/events', (req, res) => {
 
   req.on('close', () => {
     clearInterval(pingInterval);
-    sseClients.delete(res);
+    clients.delete(res);
   });
 });
 
@@ -297,6 +444,15 @@ async function start() {
     }
   }
   console.log(`[index] Loaded ${cache.rowCount} response row(s).`);
+
+  const store = createGroupStore(sheetId);
+  try {
+    await store.init();
+    groups = store;
+    console.log('[index] Community Groups loaded.');
+  } catch (err) {
+    console.error('[index] Community Groups load failed (group pages disabled):', err.message);
+  }
   rebuildState();
 
   // Catch up on anything submitted while we were down, then rely on the webhook

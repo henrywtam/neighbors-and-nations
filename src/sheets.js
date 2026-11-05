@@ -404,3 +404,61 @@ function parseApprovals(values) {
   }
   return map;
 }
+
+// ---------------------------------------------------------------------------
+// Community Group tabs (append-only, written by the app)
+// ---------------------------------------------------------------------------
+
+/**
+ * Read a whole tab as {header, rows}, creating it with `header` if missing.
+ * @returns {Promise<{header: string[], rows: string[][]}>}
+ */
+export async function readOrCreateTab(sheetId, tab, header, credentials = null) {
+  const sheets = client(credentials, false);
+  return withRetry(`${tab} read`, async () => {
+    try {
+      const res = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: tab });
+      const [head = [], ...rows] = res.data.values ?? [];
+      // New tab, or columns added later at the end: write the full header
+      const isPrefix = head.every((h, i) => h === header[i]);
+      if (head.length < header.length && isPrefix) {
+        await writeTabHeader(sheets, sheetId, tab, header);
+        return { header, rows };
+      }
+      return { header: head, rows };
+    } catch (err) {
+      if (!/Unable to parse range/i.test(err.message)) throw err;
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title: tab } } }] },
+      });
+      await writeTabHeader(sheets, sheetId, tab, header);
+      return { header, rows: [] };
+    }
+  });
+}
+
+function writeTabHeader(sheets, sheetId, tab, header) {
+  return sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${tab}!A1:${columnLetter(header.length - 1)}1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [header] },
+  });
+}
+
+/**
+ * Append rows as literal text (RAW), so typed input like "=1+1" is never
+ * evaluated as a formula.
+ */
+export async function appendRowsRaw(sheetId, tab, rows, credentials = null) {
+  if (rows.length === 0) return;
+  const sheets = client(credentials, false);
+  await withRetry(`${tab} append`, () => sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: tab,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values: rows },
+  }));
+}

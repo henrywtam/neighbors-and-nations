@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Start a Group — Neighbors &amp; Nations</title>
+  <link rel="stylesheet" href="/assets/cg.css">
+</head>
+<body>
+<main>
+  <div class="eyebrow">Neighbors &amp; Nations</div>
+  <h1>Start your Community Group</h1>
+  <p class="lead">Set up your group once. You'll get a code to text your group, and a screen to put up on your CG night.</p>
+
+  <form id="start-form">
+    <label>Your name
+      <input name="leaderName" autocomplete="name" required>
+    </label>
+    <label>Your email
+      <input name="leaderEmail" type="email" autocomplete="email" required>
+      <span class="hint">Use the email you used on the survey. Justice &amp; Outreach will follow up here.</span>
+    </label>
+    <label>Group name
+      <input name="groupName" placeholder="e.g. Sunset Young Adults" required>
+    </label>
+    <label>Neighborhood your group meets in
+      <input name="neighborhood" list="nbhds" placeholder="e.g. Inner Sunset" required>
+      <datalist id="nbhds"></datalist>
+    </label>
+    <p class="error" id="error"></p>
+    <button type="submit">Create group</button>
+  </form>
+
+  <div id="done" class="card" hidden>
+    <p>Your group code:</p>
+    <div class="big-code" id="code"></div>
+    <p>Text this to your group. On your CG night, open your group's insights page. It shows a QR code members scan to join.</p>
+    <a class="button" id="screen-link">Open insights page</a>
+    <div class="link-row">Join link to share:<a id="join-link"></a></div>
+  </div>
+</main>
+<script>
+  // Neighborhood suggestions from the SF map's own names
+  fetch('/data/sf-neighborhoods.geojson').then(r => r.json()).then(geo => {
+    const names = [...new Set(geo.features.map(f => f.properties.nhood).filter(Boolean))].sort();
+    document.getElementById('nbhds').innerHTML = names.map(n => `<option value="${n}">`).join('');
+  }).catch(() => {});
+
+  const form = document.getElementById('start-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    const err = document.getElementById('error');
+    btn.disabled = true;
+    err.textContent = '';
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      form.hidden = true;
+      document.getElementById('code').textContent = data.group.code;
+      document.getElementById('screen-link').href = data.links.screen;
+      const join = document.getElementById('join-link');
+      join.href = join.textContent = data.links.join;
+      document.getElementById('done').hidden = false;
+    } catch (ex) {
+      err.textContent = ex.message || 'Something went wrong. Please try again.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

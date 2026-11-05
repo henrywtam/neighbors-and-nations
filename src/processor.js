@@ -76,9 +76,11 @@ export function parsePlaceValue(value) {
  * @param {object} sheetData
  * @param {object} config
  * @param {object} geonames  - must expose lookupCity(cityName, countryName)
+ * @param {{emailKeys?: Set<string>}} [options] - emailKeys: count only people
+ *   whose email_key is in the set (a Community Group's roster)
  * @returns {ProcessedState}
  */
-export function processResponses(sheetData, config, geonames) {
+export function processResponses(sheetData, config, geonames, { emailKeys = null } = {}) {
   const { responses = [], regionMap = new Map(), approvals = new Map(), readAt } = sheetData;
 
   // -------------------------------------------------------------------------
@@ -100,6 +102,7 @@ export function processResponses(sheetData, config, geonames) {
     const personId = (row.person_id ?? '').trim();
     const emailKey = (row.email_key ?? '').trim() || emailKeyByPersonId.get(personId);
     if (!personId && !emailKey) continue;
+    if (emailKeys && !emailKeys.has(emailKey)) continue;
     const pid = emailKey ? `email:${emailKey}` : personId;
 
     const ts = parseDate(row.submitted_at);

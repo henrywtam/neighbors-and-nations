@@ -1,0 +1,95 @@
+/* ============================================================
+   Community Group pages — start a group, join.
+   Phone-first forms in the dashboard's navy + amber.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #0a1628;
+  --navy-panel: #0d1f3c;
+  --amber: #ffb43c;
+  --white: #ffffff;
+  --white-dim: rgba(255, 255, 255, 0.6);
+  --border: rgba(255, 255, 255, 0.14);
+  --error: #ff8a8a;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 48px;
+}
+
+main { width: 100%; max-width: 440px; }
+
+.topnav { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 24px; font-size: 14px; font-weight: 600; }
+.topnav a { color: var(--amber); text-decoration: none; }
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+h1 { font-size: 26px; line-height: 1.2; margin-bottom: 8px; }
+.lead { color: var(--white-dim); font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+
+form { display: flex; flex-direction: column; gap: 16px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+.hint { font-weight: 400; color: var(--white-dim); font-size: 13px; }
+
+input {
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS zooming on focus */
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--navy-panel);
+  color: var(--white);
+}
+input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+input.code { text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; }
+
+button, .button {
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--navy);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+button:disabled { opacity: 0.6; cursor: wait; }
+.button.secondary { background: transparent; color: var(--amber); border: 1px solid var(--amber); }
+
+.error { color: var(--error); font-size: 14px; min-height: 1em; }
+
+.card {
+  background: var(--navy-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.card p { color: var(--white-dim); line-height: 1.5; font-size: 15px; }
+.big-code { font-size: 40px; font-weight: 800; letter-spacing: 0.12em; color: var(--amber); text-align: center; }
+.link-row { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--white-dim); }
+.link-row a { color: var(--white); word-break: break-all; }
+
+
+[hidden] { display: none !important; }

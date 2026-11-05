@@ -15,7 +15,8 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 | `src/processor.js` | Pure data transformation. `processResponses(sheetData, config, geonames)` → ProcessedState. No I/O. |
 | `src/geonames.js` | In-memory city lookup from `data/cities15k.json`. Also exports `countryNameToCode` / `countryAliases`, derived from `countries.json`. |
 | `public/data/countries.json` | Single country list shared by server and map: name, alpha-2, ISO numeric (zero-padded), typed-name `aliases`, and extra map `shapes` (territories rolled into a parent, e.g. Puerto Rico → US). |
-| `src/index.js` | Express server, SSE stream, Meta check loop, Planning Center webhook (`POST /webhooks/planning-center`). |
+| `src/groups.js` | Community Groups store: create a group (code), join by code + email. Loaded once from the group tabs, then append-only. |
+| `src/index.js` | Express server, SSE stream, Meta check loop, Planning Center webhook (`POST /webhooks/planning-center`), Community Group pages and API. |
 
 ## Google Sheet Tab Structure
 
@@ -26,6 +27,8 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 | **Regions** | Col A = country name, Col B = region name. |
 | **Cities** | Manual lat/lng overrides. Cols: typed_text, country, lat, lng. |
 | **Approvals** | Write-in text moderation. Cols: write_in_text, approved (TRUE/FALSE), show_as. |
+| **Groups** | Community Groups, written by the app: `code`, `group_name`, `neighborhood`, `leader_name`, `leader_email`, `created_at`. |
+| **GroupMembers** | Roster, written by the app: `code`, `email_key` (same hash as Responses; links a member to their answers), `member_ref` (one per join), `joined_at`, `email` (shown in the page's "Who's here" list). |
 | **Meta** | Change marker, written by the app. Key/value rows: `last_synced_at`, `last_submission_id`, `row_count`, `last_updated`. Created automatically; reconciled with Responses on every startup. |
 
 ### Responses Tab Columns
@@ -73,3 +76,4 @@ npm run pc-webhook -- https://<host>/webhooks/planning-center   # subscribe; pri
 - **Anything that appends to Responses must update Meta `row_count`**, or the server won't see the rows until restart.
 - **City lookup priority**: `cityFixes` map (manual overrides in Cities tab) → `geonames.lookupCity()` (bundled JSON).
 - **Deduplication**: sync skips any PC submission ID already in the Sheet. The processor then keeps the latest `submitted_at` per person, where a person is their `email_key` (so duplicate PC profiles with the same email collapse), falling back to `person_id`. A resubmission replaces that person's earlier answers.
+- **Community Groups** — `/start-group` (leader gets a code) → `/join/CODE` (members add their survey email) → `/cg/CODE` (one-screen insights page for that roster only: headline, world map, Heartbeat Cloud, skills, and a running "Who's here" list of joined emails; two QR cards (1 survey, 2 join + group code)). Group pages get their own SSE state (`/api/events?group=CODE`). `/cg/CODE?demo` plays eight sample members (`src/demo.js`) joining one by one; their sample answers go through the real processor (`/api/groups/CODE/demo?joined=N`) and nothing is written to the Sheet.

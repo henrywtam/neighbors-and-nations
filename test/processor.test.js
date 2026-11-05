@@ -324,3 +324,22 @@ test('row with no answers at all is skipped (invalidRowCount++)', () => {
   assert.equal(state.totalPeople, 0);
   assert.equal(state.invalidRowCount, 1);
 });
+
+// ---------------------------------------------------------------------------
+// Community Group roster filter
+// ---------------------------------------------------------------------------
+
+test('emailKeys counts only people on the roster, including older rows linked by person_id', () => {
+  const data = makeSheetData({
+    responses: [
+      makeRow({ person_id: 'P1', email_key: 'aaa' }),
+      makeRow({ person_id: 'P2', email_key: 'bbb', connect_1_place: 'Kenya' }),
+      makeRow({ person_id: 'P3', email_key: '' }),                       // no email: never in a group
+      makeRow({ person_id: 'P2', email_key: '', submitted_at: '2026-10-01T00:00:00Z' }), // older P2 row
+    ],
+  });
+  const state = processResponses(data, defaultConfig, mockGeonames, { emailKeys: new Set(['bbb']) });
+  assert.equal(state.totalPeople, 1);
+  assert.equal(state.countryPicks.get('Kenya'), 1);
+  assert.equal(state.countryPicks.get('Thailand'), undefined);
+});

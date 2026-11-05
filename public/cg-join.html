@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Your CG — Neighbors &amp; Nations</title>
+  <link rel="stylesheet" href="/assets/cg.css">
+</head>
+<body>
+<main>
+  <nav class="topnav">
+    <a id="back" href="/">← Back</a>
+    <a href="/world">See the whole church's map</a>
+  </nav>
+  <div class="eyebrow">Neighbors &amp; Nations</div>
+  <h1>Join your CG</h1>
+  <p class="lead" id="lead">Add yourself to your group so your survey answers show up on your group's map. Only combined results are shown, never yours on their own.</p>
+
+  <form id="join-form">
+    <label>Group code
+      <input name="code" class="code" autocomplete="off" autocapitalize="characters" required>
+    </label>
+    <label>Your email
+      <input name="email" type="email" autocomplete="email" required>
+      <span class="hint">The same email you used on the survey.</span>
+    </label>
+    <p class="error" id="error"></p>
+    <button type="submit">Join group</button>
+  </form>
+
+  <div id="done" class="card" hidden>
+    <div class="big-code" id="done-code"></div>
+    <p>You're in <strong id="done-name"></strong>. Your answers will show up on the group screen.</p>
+    <p>Haven't taken the survey yet? Take it now, using the same email.</p>
+    <a class="button" href="https://realitysf.churchcenter.com/people/forms/1335453" target="_blank" rel="noopener">Take the survey</a>
+    <a class="button secondary" id="group-link" href="/">See our group's page</a>
+    <a class="button secondary" href="/world">See the whole church's map</a>
+  </div>
+</main>
+<script>
+  const form = document.getElementById('join-form');
+  const codeFromPath = decodeURIComponent(location.pathname.split('/')[2] || '');
+  const codeFromQuery = new URLSearchParams(location.search).get('code') || '';
+  const code = (codeFromPath || codeFromQuery).toUpperCase();
+
+  // Back: to wherever they came from on this site, else to the group's page
+  const groupPage = code ? `/cg/${encodeURIComponent(code)}` : '/';
+  document.getElementById('back').href = groupPage;
+  document.getElementById('group-link').href = groupPage;
+  document.getElementById('back').addEventListener('click', (e) => {
+    if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) {
+      e.preventDefault();
+      history.back();
+    }
+  });
+  if (code) {
+    form.code.value = code;
+    fetch(`/api/groups/${encodeURIComponent(code)}`).then(r => r.ok ? r.json() : null).then(data => {
+      if (data) document.getElementById('lead').textContent =
+        `Join ${data.group.groupName} so your survey answers show up on your group's map. Only combined results are shown, never yours on their own.`;
+    }).catch(() => {});
+    form.email.focus();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    const err = document.getElementById('error');
+    btn.disabled = true;
+    err.textContent = '';
+    try {
+      const c = form.code.value.trim().toUpperCase();
+      const res = await fetch(`/api/groups/${encodeURIComponent(c)}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email.value }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      form.hidden = true;
+      document.getElementById('lead').hidden = true;
+      document.getElementById('done-code').textContent = data.group.code;
+      document.getElementById('group-link').href = `/cg/${encodeURIComponent(data.group.code)}`;
+      document.getElementById('done-name').textContent = data.group.groupName;
+      document.getElementById('done').hidden = false;
+    } catch (ex) {
+      err.textContent = ex.message || 'Something went wrong. Please try again.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

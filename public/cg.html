@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Group — Neighbors &amp; Nations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/cg-insights.css">
+</head>
+<body>
+<div id="page">
+
+  <header id="top">
+    <div id="title-block">
+      <div class="eyebrow">Neighbors &amp; Nations · Community Group</div>
+      <h1 id="group-name">&nbsp;</h1>
+    </div>
+    <div id="count"><b id="answered">0</b><span id="answered-label">people have shared their heart</span></div>
+    <div id="qrs">
+      <a class="qrc" id="survey" href="https://realitysf.churchcenter.com/people/forms/1335453" target="_blank" rel="noopener">
+        <img class="qr" src="/api/qr/survey.svg" alt="QR code to take the survey">
+        <div class="qrt">
+          <div class="st"><i>1</i>Take the survey</div>
+          <div class="hint">Under 2 minutes. Use your email.</div>
+        </div>
+      </a>
+      <a class="qrc" id="join" href="#">
+        <img class="qr" id="join-qr" alt="">
+        <div class="qrt">
+          <div class="st"><i>2</i><span id="join-step">Join our group</span></div>
+          <div id="join-code"></div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <div id="body">
+  <div id="notice" hidden></div>
+
+  <main id="insights" hidden>
+    <div id="left">
+      <div class="panel worldmap"><h2>Our Global Heartbeat<small>Places glow brighter as more of us feel connected</small></h2><div class="map" id="map"></div></div>
+      <div class="panel skill"><h2>Skills in the Room<small>What we bring</small></h2><div class="bars cols" id="skills"></div></div>
+    </div>
+    <div id="rail">
+      <div class="panel heart"><h2>The Heartbeat Cloud<small>What breaks our hearts</small></h2><div class="cloud" id="hearts"></div></div>
+    </div>
+    <aside id="who" class="panel">
+      <h2>Who's here <span id="who-count"></span></h2>
+      <ul id="who-list"></ul>
+    </aside>
+  </main>
+  </div>
+
+  <div id="status"><i id="live-dot"></i><span id="live-label">Live</span></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="/assets/cg-insights.js"></script>
+</body>
+</html>

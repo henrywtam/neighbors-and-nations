@@ -1,0 +1,266 @@
+/* ============================================================
+   Community Group insights page (/cg/CODE)
+   Fits one TV/laptop screen; scrolls on a phone.
+   Night-sky palette and Bricolage Grotesque, as in the CG night demo.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Size unit: 1vw, but never more than the height allows, so it fits a 16:9 TV and a 16:10 laptop */
+  --u: min(1vw, 1.6vh);
+  --font: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --navy: #081330;
+  --ink: #F4EEE0;
+  --muted: #A3AEC8;
+  --line: rgba(244, 238, 224, 0.14);
+  --ember: #FFB547;
+  --ember-hot: #FF7A3D;
+  --city: #3de8ff;
+  --gap: clamp(12px, calc(1.3 * var(--u)), 28px);
+  --pad: clamp(16px, calc(2.2 * var(--u)), 48px);
+}
+
+html, body {
+  min-height: 100%;
+  background: radial-gradient(90% 70% at 35% 45%, #12245a 0%, #0a1639 48%, #060e28 100%) fixed var(--navy);
+  color: var(--ink);
+  font-family: var(--font);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+#page {
+  min-height: 100vh;
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  position: relative;
+}
+
+/* TV and laptop: exactly one screen, so the map and cloud shrink to fit */
+@media (min-width: 761px) {
+  #page { height: 100vh; }
+}
+
+/* ---------- header: title, count, two small QR cards ---------- */
+#top { display: flex; align-items: center; gap: calc(2 * var(--u)); }
+#title-block { flex: 1; min-width: 0; }
+
+.eyebrow {
+  font-size: clamp(13px, calc(1.2 * var(--u)), 26px);
+  font-weight: 600;
+  color: var(--ember);
+  margin-bottom: 4px;
+}
+
+#group-name {
+  font-size: clamp(26px, calc(2.9 * var(--u)), 66px);
+  line-height: 1.02;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+  font-variation-settings: "opsz" 96;
+}
+
+#count { flex: none; text-align: right; }
+#answered {
+  display: block;
+  font-size: clamp(40px, calc(4.6 * var(--u)), 104px);
+  line-height: 0.9;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+#answered-label { display: block; font-size: clamp(14px, calc(1.15 * var(--u)), 26px); color: var(--muted); margin-top: 6px; }
+
+#qrs { flex: none; display: flex; gap: calc(0.8 * var(--u)); }
+.qrc {
+  display: flex;
+  align-items: center;
+  gap: calc(0.8 * var(--u));
+  padding: calc(0.6 * var(--u));
+  padding-right: calc(1.1 * var(--u));
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  text-decoration: none;
+  color: var(--ink);
+}
+.qr { width: calc(6.2 * var(--u)); height: auto; display: block; border-radius: 8px; }
+.qrt { display: flex; flex-direction: column; gap: calc(0.35 * var(--u)); max-width: calc(10 * var(--u)); }
+.st { display: flex; align-items: center; gap: 8px; font-size: clamp(13px, calc(1.05 * var(--u)), 24px); font-weight: 700; line-height: 1.15; }
+.st i {
+  font-style: normal;
+  flex: none;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ember);
+  color: #1a0f05;
+  font-weight: 800;
+}
+.hint { font-size: clamp(11px, calc(0.8 * var(--u)), 18px); color: var(--muted); line-height: 1.3; }
+#join-code { font-size: clamp(20px, calc(1.8 * var(--u)), 42px); font-weight: 800; letter-spacing: 0.16em; line-height: 1; }
+
+/* ---------- body ---------- */
+#body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+#notice, #insights { grid-row: 1; grid-column: 1; }
+
+/* Map with skills under it on the left; the Heartbeat Cloud full height beside it; a thin who's-here column on the right */
+#insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) calc(15 * var(--u));
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--gap);
+  min-height: 0;
+}
+#left, #rail { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
+#left .worldmap { flex: 1; min-height: 0; }
+#rail .heart { flex: 1; min-height: 0; }
+
+/* Glass panels, as in the demo */
+.panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: calc(1.2 * var(--u)) calc(1.5 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.9 * var(--u));
+  min-height: 0;
+  overflow: hidden;
+}
+.panel h2 { font-size: clamp(17px, calc(1.6 * var(--u)), 36px); font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+.panel h2 small { display: block; font-size: 0.68em; font-weight: 500; color: var(--muted); margin-top: 3px; letter-spacing: 0; }
+
+/* ---------- skills ---------- */
+.bars { display: flex; flex-direction: column; gap: calc(0.75 * var(--u)); }
+/* Skills under the map: two columns, filled top to bottom */
+.bars.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, auto); grid-auto-flow: column; gap: calc(0.75 * var(--u)) calc(2.5 * var(--u)); }
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  align-items: baseline;
+  font-size: clamp(15px, calc(1.25 * var(--u)), 28px);
+  font-weight: 560;
+}
+.bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar-row i {
+  grid-column: 1 / -1;
+  display: block;
+  height: clamp(7px, calc(0.55 * var(--u)), 13px);
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--ember-hot), var(--ember));
+  min-width: 4px;
+  transition: width 0.8s ease;
+}
+/* Icon column on the left; the bar starts under the name */
+.with-icons .bar-row { grid-template-columns: 1.6em 1fr auto; }
+.bar-icon { grid-row: span 2; align-self: center; font-size: 1.3em; text-align: center; line-height: 1; }
+.with-icons .bar-row i { grid-column: 2 / -1; }
+
+.empty { color: var(--muted); font-size: clamp(14px, calc(1.1 * var(--u)), 24px); line-height: 1.45; }
+
+/* ---------- Heartbeat Cloud and map: drawn to the box's size, so the SVG must not size the box ---------- */
+.cloud, .map { flex: 1; min-height: 0; position: relative; }
+.cloud svg, .map svg { position: absolute; inset: 0; display: block; }
+.bub text { text-anchor: middle; fill: #1b0e04; font-weight: 680; font-family: var(--font); }
+.bub .c { font-weight: 800; }
+.bub.dim text { fill: #fff; }
+
+/* Same country colours as the main dashboard's world map */
+.map .country-path { stroke: rgba(255, 255, 255, 0.05); stroke-width: 0.4; transition: fill 1.5s ease; }
+.map .country-path.lit { filter: drop-shadow(0 0 8px rgba(255, 160, 30, 0.6)); }
+.map .country-marker { fill: hsl(35, 100%, 60%); stroke: hsl(35, 100%, 80%); stroke-width: 0.8; filter: drop-shadow(0 0 6px rgba(255, 160, 30, 0.9)); }
+.map .city-dot { fill: var(--city); stroke: rgba(20, 6, 16, 0.9); stroke-width: 1.5; filter: drop-shadow(0 0 4px var(--city)); }
+
+/* ---------- who's here: emails as they join, newest first; long lists fade out ---------- */
+#who-count { color: var(--muted); font-weight: 500; }
+#who-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--u));
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 calc(100% - 40px), transparent);
+  font-size: clamp(14px, calc(1.05 * var(--u)), 24px);
+}
+#who-list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#who-list li.empty { white-space: normal; color: var(--muted); }
+#who-list li.fresh { animation: fresh 1.6s ease-out; }
+@keyframes fresh { from { opacity: 0; transform: translateY(-6px); color: var(--ember); } }
+
+/* ---------- missing-group notice ---------- */
+#notice {
+  margin: auto;
+  max-width: 900px;
+  text-align: center;
+  padding: var(--pad);
+  border-radius: 22px;
+  background: rgba(14, 29, 69, 0.85);
+  border: 1px solid rgba(255, 181, 71, 0.35);
+  font-size: clamp(16px, calc(1.4 * var(--u)), 32px);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---------- live badge and demo tag ---------- */
+#status {
+  position: absolute;
+  right: var(--pad);
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(244, 238, 224, 0.4);
+}
+#live-dot { width: 8px; height: 8px; border-radius: 50%; background: #7ED9A6; display: block; }
+#live-dot.off { background: #FFC857; }
+
+#demo-tag {
+  position: fixed;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 200, 87, 0.16);
+  color: #FFC857;
+  font-size: 13px;
+  font-weight: 650;
+  z-index: 10;
+}
+
+[hidden] { display: none !important; }
+
+/* ---------- phone ---------- */
+@media (max-width: 760px) {
+  #top { flex-direction: column; align-items: stretch; }
+  #count { text-align: left; }
+  /* No point scanning a code on the phone it's on: the cards become two buttons */
+  #qrs { align-self: stretch; }
+  .qrc { flex: 1; justify-content: center; padding: 12px; border: 0; border-radius: 999px; background: var(--ember); color: #1a0f05; }
+  .qrc .qr, .qrc .hint, #join-code { display: none; }
+  .st i { display: none; }
+  #insights { grid-template-columns: 1fr; }
+  .bars.cols { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; }
+  .cloud { height: 300px; flex: none; }
+  .map { height: 220px; flex: none; }
+  #who-list { mask-image: none; }
+  #status { position: static; justify-content: center; }
+}
