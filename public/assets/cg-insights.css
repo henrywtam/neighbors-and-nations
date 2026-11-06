@@ -68,14 +68,15 @@ html, body {
 /* Count on one line under the title: "8 people have shared their heart" */
 #count { display: flex; align-items: baseline; gap: calc(0.7 * var(--u)); margin-top: calc(0.5 * var(--u)); }
 #answered {
-  font-size: clamp(30px, calc(3 * var(--u)), 68px);
-  line-height: 1;
-  font-weight: 760;
+  font-size: clamp(38px, calc(4.2 * var(--u)), 96px);
+  line-height: 0.9;
+  font-weight: 800;
   letter-spacing: -0.03em;
-  color: #fff;
+  color: var(--ember);
+  text-shadow: 0 0 calc(1.4 * var(--u)) rgba(255, 181, 71, 0.45);
   font-variant-numeric: tabular-nums;
 }
-#answered-label { font-size: clamp(14px, calc(1.2 * var(--u)), 28px); color: var(--muted); }
+#answered-label { font-size: clamp(16px, calc(1.5 * var(--u)), 34px); font-weight: 600; color: var(--ink); }
 
 #qrs { flex: none; display: flex; gap: calc(0.8 * var(--u)); }
 .qrc {
