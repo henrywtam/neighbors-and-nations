@@ -2,6 +2,17 @@
    The tab bar every page shares (filled by site-nav.js)
    ============================================================ */
 
+/* Always keep room for the scrollbar, so pages that scroll and pages that
+   don't are the same width and nothing shifts when switching tabs */
+html {
+  scrollbar-gutter: stable;
+  /* Same thin, faint scrollbar as the dashboard's lists */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  /* Dark behind the scrollbar space on every page */
+  background-color: #060e28;
+}
+
 #app-nav {
   flex: 0 0 40px;
   height: 40px;

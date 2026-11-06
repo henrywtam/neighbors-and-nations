@@ -129,6 +129,7 @@ function render(state) {
   renderCloud(hearts.slice(0, ROWS.hearts));
   lastState = state;
   renderMap(state);
+  renderPlaces(state);
   renderBars('skills', skills.slice(0, ROWS.skills), 'No vocations shared yet', name => SKILL_ICONS[name] ?? SKILL_ICON_FALLBACK);
 }
 
@@ -277,6 +278,20 @@ async function loadMap() {
   }
 }
 
+const PLACE_ROWS = 7;
+
+/** One combined Top places list (countries, regions, cities); regions don't light up on the map, so this is where they show */
+function renderPlaces(state) {
+  const all = [
+    ...Object.entries(state.countryPicks || {}).map(([name, count]) => ({ name, count, type: 'country' })),
+    ...Object.entries(state.regionPicks || {}).map(([name, count]) => ({ name, count, type: 'region' })),
+    ...(state.cityPicks || []).map(c => ({ name: c.name, count: c.count, type: 'city' })),
+  ].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, PLACE_ROWS);
+  document.getElementById('top-places').innerHTML = all.length
+    ? all.map(p => `<li class="${p.type}"><i></i><span>${esc(p.name)}</span><b>${p.count}</b></li>`).join('')
+    : '<li class="none">None yet</li>';
+}
+
 function countryOf(f) {
   return shapeToCountry[f.properties?.name] || (f.id != null ? numToCountry[String(f.id).padStart(3, '0')] : undefined);
 }
@@ -295,7 +310,18 @@ function renderMap(state) {
 
   const countryPicks = state.countryPicks || {};
   const maxCountry = Math.max(1, ...Object.values(countryPicks));
-  const projection = d3.geoNaturalEarth1().fitSize([W, H], { type: 'FeatureCollection', features: mapFeatures });
+  // Zoom in a little past fitting the width, trimming only open Pacific off the far left and right
+  const world = { type: 'FeatureCollection', features: mapFeatures };
+  const left = 0, right = W;
+  const projection = d3.geoNaturalEarth1().fitExtent([[left, 0], [right, H]], world);
+  const [[x0, y0], [x1, y1]] = d3.geoPath(projection).bounds(world);
+  const zoom = Math.min(H / (y1 - y0), 1.06);
+  if (zoom > 1) {
+    const [tx, ty] = projection.translate();
+    const cx = (left + right) / 2, cy = H / 2;
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    projection.scale(projection.scale() * zoom).translate([cx + (tx - mx) * zoom, cy + (ty - my) * zoom]);
+  }
   const path = d3.geoPath(projection);
 
   const svg = d3.create('svg').attr('width', W).attr('height', H);

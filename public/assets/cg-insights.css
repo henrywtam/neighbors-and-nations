@@ -95,7 +95,9 @@ html, body {
   color: var(--ink);
 }
 .qr { width: calc(6.2 * var(--u)); height: auto; display: block; border-radius: 8px; }
-.qrt { display: flex; flex-direction: column; gap: calc(0.35 * var(--u)); min-width: 0; padding-top: calc(0.3 * var(--u)); }
+.qrt { display: flex; flex-direction: column; gap: calc(0.35 * var(--u)); min-width: 0; }
+/* Every card is one QR tall, so padding is even top and bottom and the step numbers line up */
+#fits .qrt { min-height: calc(6.2 * var(--u)); }
 .st { display: flex; align-items: flex-start; gap: 8px; font-size: clamp(13px, calc(1.05 * var(--u)), 24px); font-weight: 700; line-height: 1.15; }
 .st i {
   font-style: normal;
@@ -122,14 +124,17 @@ html, body {
 }
 #notice, #insights { grid-row: 1; grid-column: 1; }
 
-/* Map with skills under it on the left; the Heartbeat Cloud full height beside it; a thin who's-here column on the right */
+/* Top places and Who's here on the left, beside the map (skills under it); the Heartbeat Cloud on the right */
 #insights {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr) calc(15 * var(--u));
+  /* Left column never narrower than "East & Southeast Asia", the longest region; longer names get … */
+  grid-template-columns: max(calc(16 * var(--u)), 230px) minmax(0, 1.6fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   gap: var(--gap);
   min-height: 0;
 }
+#side { order: -1; display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
+#side #who { flex: 1; min-height: 0; }
 #left, #rail { display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
 #left .worldmap { flex: 1; min-height: 0; }
 #rail .heart { flex: 1; min-height: 0; }
@@ -186,6 +191,19 @@ html, body {
 .bub text { text-anchor: middle; fill: #1b0e04; font-weight: 680; font-family: var(--font); }
 .bub .c { font-weight: 800; }
 .bub.dim text { fill: #fff; }
+
+/* Top places panel: countries, regions and cities together, coloured by type */
+.places ol { list-style: none; display: flex; flex-direction: column; gap: calc(0.4 * var(--u)); }
+.places li { display: flex; align-items: center; gap: 8px; font-size: clamp(13px, calc(1 * var(--u)), 23px); }
+.places li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.places li b { font-variant-numeric: tabular-nums; }
+.places li.none { color: var(--muted); }
+.places i { flex: none; width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.places .country i { background: #ffb43c; }
+.places .region i { background: #b48cff; }
+.places .city i { background: var(--city); }
+.places .key { display: flex; gap: 10px; font-size: clamp(10px, calc(0.7 * var(--u)), 16px); color: var(--muted); }
+.places .key span { display: flex; align-items: center; gap: 4px; }
 
 /* Same country colours as the main dashboard's world map */
 .map .country-path { stroke: rgba(255, 255, 255, 0.05); stroke-width: 0.4; transition: fill 1.5s ease; }
@@ -270,10 +288,19 @@ html, body {
   .qrc { flex: 1; justify-content: center; padding: 12px; border: 0; border-radius: 999px; background: var(--ember); color: #1a0f05; }
   .qrc .qr, .qrc .hint, #join-code { display: none; }
   .st i { display: none; }
-  #insights { grid-template-columns: 1fr; }
+  /* minmax(0, …) lets long names shrink and cut off instead of widening the page */
+  #insights { grid-template-columns: minmax(0, 1fr); }
+  #side, #left, #rail, .panel { min-width: 0; }
+  #side { order: 0; }
   .bars.cols { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; }
   .cloud { height: 300px; flex: none; }
   .map { height: 220px; flex: none; }
   #who-list { mask-image: none; }
   #status { position: static; justify-content: center; }
+}
+
+/* Map panel: tighter side padding so the map can be bigger */
+@media (min-width: 761px) {
+  .panel.worldmap { padding-left: calc(0.8 * var(--u)); padding-right: calc(0.8 * var(--u)); }
+  .panel.worldmap h2 { padding-left: calc(0.7 * var(--u)); }
 }
