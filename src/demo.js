@@ -8,6 +8,7 @@
  */
 
 import { emailKey } from './sync-pc.js';
+import { maskEmail } from './groups.js';
 
 // [email, survey row]
 const MEMBERS = [
@@ -66,6 +67,6 @@ export function demoGroup(joined) {
       email_key: emailKey(email),
       ...row,
     }));
-  const members = present.map(([email]) => ({ email })).reverse();
+  const members = present.map(([email]) => ({ email: maskEmail(email) })).reverse();
   return { responses, members };
 }

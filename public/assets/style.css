@@ -860,40 +860,7 @@ body {
   flex-direction: column;
 }
 
-#app-nav {
-  flex: 0 0 40px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 6px;
-  background: var(--navy);
-  border-bottom: 1px solid var(--border);
-  z-index: 100;
-}
-
-.app-tab {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: color 0.18s, background 0.18s;
-  font-family: inherit;
-}
-
-.app-tab:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.app-tab.active {
-  color: var(--amber);
-  background: rgba(255, 180, 60, 0.08);
-}
+/* #app-nav and .app-tab live in site-nav.css, shared by every page */
 
 .app-view {
   display: none;
@@ -1450,8 +1417,8 @@ body.mode-desktop #sf-lb-header {
     overflow: visible;
   }
 
-  /* World/SF tabs and the TV switch give way to the section chips */
-  #app-nav,
+  /* The shared tabs stay; the TV switch and SF view don't apply on a phone */
+  #mode-to-tv,
   #sf-view,
   .sidebar-toggle {
     display: none !important;

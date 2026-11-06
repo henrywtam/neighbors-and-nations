@@ -117,6 +117,8 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
   // -------------------------------------------------------------------------
   const countryPicks = new Map();
   const regionPicks = new Map();
+  // People connected to each region at all: picked the region or a country in it (each person once)
+  const regionReach = new Map();
   /** @type {Map<string, {lat: number, lng: number, count: number, name: string, countryCode: string}>} */
   const cityPicksMap = new Map(); // key = `${lat},${lng}`
   let sfBayCount = 0;
@@ -278,6 +280,9 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
     }
 
     if (personHasSfBay) sfBayCount++;
+    const reached = new Set(personRegions);
+    for (const c of personCountries) if (regionMap.has(c)) reached.add(regionMap.get(c));
+    for (const r of reached) increment(regionReach, r);
     for (const c of personCountries) increment(countryPicks, c);
     for (const r of personRegions) increment(regionPicks, r);
 
@@ -358,6 +363,7 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
     totalPeople,
     countryPicks,
     regionPicks,
+    regionReach,
     regionCountries,
     cityPicks,
     sfBayCount,

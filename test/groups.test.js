@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGroupStore, publicGroup, memberList } from '../src/groups.js';
+import { createGroupStore, publicGroup, memberList, maskEmail, codeFromName } from '../src/groups.js';
 import { rowsToObjects } from '../src/sheets.js';
 import { emailKey } from '../src/sync-pc.js';
 
@@ -20,16 +20,23 @@ function fakeApi(tabs = {}) {
 
 const LEADER = { leaderName: 'Sam', leaderEmail: 'Sam@Example.com', groupName: 'Sunset Young Adults', neighborhood: 'Inner Sunset' };
 
+test('codes come from the CG name', () => {
+  assert.equal(codeFromName('Sunset Young Adults'), 'SUNSETYA');
+  assert.equal(codeFromName('Mission CG'), 'MISSION');
+  assert.equal(codeFromName('The Richmond Community Group'), 'THER');
+  assert.equal(codeFromName('Noe Valley Families & Friends'), 'NOEVFF');
+  assert.equal(codeFromName('!!!'), 'GROUP');
+});
+
 test('create gives a readable code and adds the leader as a member', async () => {
   const s = fakeApi();
   const store = createGroupStore('sheet', s.api);
   await store.init();
   const g = await store.create(LEADER);
-  assert.match(g.code, /^SUNSET[2-9]{2}$/);
+  assert.equal(g.code, 'SUNSETYA');
   assert.equal(g.leaderEmail, 'sam@example.com');
   assert.deepEqual([...store.memberKeys(g.code)], [emailKey('sam@example.com')]);
-  assert.equal(publicGroup(g).memberCount, 1);
-  assert.equal('leaderEmail' in publicGroup(g), false);
+  assert.deepEqual(publicGroup(g), { code: g.code, groupName: 'Sunset Young Adults' });
 });
 
 test('join: lowercase code works, two emails are one member, rejoining adds nothing', async () => {
@@ -41,7 +48,7 @@ test('join: lowercase code works, two emails are one member, rejoining adds noth
   const again = await store.join(code, ['A@x.com']);
   assert.equal(again.added, 0);
   assert.equal(store.memberKeys(code).size, 3);
-  assert.equal(publicGroup(store.get(code)).memberCount, 2);
+  assert.equal(memberList(store.get(code)).length, 2);
   await assert.rejects(store.join('NOPE22', ['a@x.com']), { status: 400 });
   await assert.rejects(store.join(code, ['not-an-email']), { status: 400 });
 });
@@ -55,9 +62,8 @@ test('groups and rosters survive a reload from the tabs', async () => {
 
   const reloaded = createGroupStore('sheet', fakeApi(s.tabs).api);
   await reloaded.init();
-  const g = publicGroup(reloaded.get(code));
-  assert.equal(g.groupName, 'Sunset Young Adults');
-  assert.equal(g.memberCount, 2);
+  assert.equal(publicGroup(reloaded.get(code)).groupName, 'Sunset Young Adults');
+  assert.equal(memberList(reloaded.get(code)).length, 2);
 });
 
 test('memberList: one entry per join with its email, newest first', async () => {
@@ -69,4 +75,30 @@ test('memberList: one entry per join with its email, newest first', async () => 
   const list = memberList(store.get(code));
   assert.deepEqual(list.map(m => m.email).sort(), ['b@x.com', 'sam@example.com']);
   assert.deepEqual(list.find(m => m.email === 'b@x.com').keys, [emailKey('b@x.com')]);
+});
+
+test('names are unique; codes that collide get a number, even when created at once', async () => {
+  const s = fakeApi();
+  const store = createGroupStore('sheet', s.api);
+  await store.init();
+  await assert.rejects(store.create({ ...LEADER, groupName: 'x'.repeat(81) }), { status: 400 });
+  await assert.rejects(store.create({ ...LEADER, leaderEmail: `${'a'.repeat(250)}@x.com` }), { status: 400 });
+
+  const names = ['Sunset Young Adults', 'Sunset Young Artists', 'Sunset Yellow Apples'];
+  const made = await Promise.all(names.map(groupName => store.create({ ...LEADER, groupName })));
+  assert.deepEqual(made.map(g => g.code), ['SUNSETYA', 'SUNSETYA2', 'SUNSETYA3']);
+
+  // Same name, different spacing or case: rejected, even when sent at the same moment
+  const dupes = await Promise.allSettled([store.create({ ...LEADER, groupName: 'sunset  young adults!' }), store.create({ ...LEADER, groupName: 'Mission' }), store.create({ ...LEADER, groupName: 'MISSION' })]);
+  assert.deepEqual(dupes.map(d => d.status), ['rejected', 'fulfilled', 'rejected']);
+  assert.deepEqual(store.preview('Mission'), { available: false, code: 'MISSION2' });
+  assert.deepEqual(store.preview('Glen Park'), { available: true, code: 'GLENP' });
+  assert.deepEqual(store.preview('Demo'), { available: true, code: 'DEMO2' }); // DEMO is the public sample page
+  assert.deepEqual(store.list().map(g => g.groupName), ['Mission', 'Sunset Yellow Apples', 'Sunset Young Adults', 'Sunset Young Artists']);
+});
+
+test('maskEmail keeps 3 letters and the real domain', () => {
+  assert.equal(maskEmail('maria@gmail.com'), 'mar***@gmail.com');
+  assert.equal(maskEmail('al@x.org'), 'al***@x.org');
+  assert.equal(maskEmail(''), '');
 });

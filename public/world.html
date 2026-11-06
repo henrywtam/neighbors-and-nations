@@ -4,18 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Neighbors &amp; Nations — RealitySF</title>
+  <link rel="stylesheet" href="/assets/site-nav.css">
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 
-  <!-- App-level tab navigation -->
-  <div id="app-nav">
-    <button class="app-tab active" data-view="world">🌍 World Map</button>
-    <button class="app-tab" data-view="sf">🌉 San Francisco</button>
+  <!-- Tab bar shared by every page (site-nav.js), plus the TV switch -->
+  <nav id="app-nav">
+    <div id="site-tabs"></div>
     <button id="mode-to-tv" class="mode-btn" title="Switch to TV display" aria-label="Switch to TV display">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
     </button>
-  </div>
+  </nav>
+  <script src="/assets/site-nav.js"></script>
 
   <!-- Phone only: jump between the world page's sections (sticky, so always one tap away) -->
   <nav id="phone-sections" aria-label="Sections">

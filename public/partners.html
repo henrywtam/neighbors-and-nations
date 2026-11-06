@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Our Partners — Neighbors &amp; Nations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site-nav.css">
+  <link rel="stylesheet" href="/assets/pages.css">
+</head>
+<body>
+<nav id="app-nav"><div id="site-tabs"></div></nav>
+<script src="/assets/site-nav.js"></script>
+<main>
+  <nav class="topnav" id="group-nav" hidden>
+    <a id="group-link" href="/">← Our group's page</a>
+  </nav>
+
+  <header>
+    <div class="eyebrow">Neighbors &amp; Nations</div>
+    <h1 id="title">Our Missionaries &amp; Partners</h1>
+    <p class="lead" id="lead">The missionaries and global partners our church supports, here in the Bay Area and around the world.</p>
+  </header>
+
+  <section id="fits" hidden>
+    <h2 id="fits-title">Fits for our group</h2>
+    <p class="section-lead">Picked from what our group shared. Everyone is listed below too.</p>
+    <div class="cards" id="fit-cards"></div>
+  </section>
+
+  <section id="all">
+    <div class="all-head">
+      <h2>All our missionaries &amp; partners</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-kind="all" role="tab" aria-selected="true">All</button>
+        <button class="tab" data-kind="Missionary" role="tab" aria-selected="false">Missionaries</button>
+        <button class="tab" data-kind="Partner" role="tab" aria-selected="false">Partners</button>
+      </div>
+    </div>
+    <div class="cards" id="all-cards"></div>
+  </section>
+
+  <p class="notice" id="notice" hidden></p>
+</main>
+<script src="/assets/partners.js"></script>
+</body>
+</html>

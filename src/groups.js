@@ -1,7 +1,8 @@
 /**
  * groups.js
  *
- * Community Groups: a leader creates a group and gets a code; members join
+ * Community Groups: a leader creates a group (names are unique) and gets a
+ * code made from its name, e.g. "Sunset Young Adults" → SUNSETYA; members join
  * with the code and the email they used on the survey. The CG insights page
  * then shows results only for responses whose email_key is on that group's
  * roster.
@@ -26,21 +27,39 @@ export const MEMBERS_TAB = 'GroupMembers';
 const GROUPS_HEADER = ['code', 'group_name', 'neighborhood', 'leader_name', 'leader_email', 'created_at'];
 const MEMBERS_HEADER = ['code', 'email_key', 'member_ref', 'joined_at', 'email'];
 
-// Code digits skip 0 and 1, which read like O and I on a screen
-const CODE_DIGITS = '23456789';
+// Longest values accepted from the forms
+const MAX_TEXT = 80;
+const MAX_EMAIL = 254;
 
 export function normalizeCode(code) {
   return String(code ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 function isEmail(s) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s ?? '').trim());
+  const e = String(s ?? '').trim();
+  return e.length <= MAX_EMAIL && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
-/** e.g. "Sunset Young Adults" → "SUNSET" + 2 digits */
-function codeStem(groupName, neighborhood) {
-  const word = `${groupName} ${neighborhood}`.toUpperCase().match(/[A-Z]{3,}/)?.[0] ?? 'GROUP';
-  return word.slice(0, 6);
+/** Two names are the same group if they match ignoring case, spacing and punctuation */
+export function nameKey(name) {
+  return String(name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Codes no group can take: /cg/DEMO is the public sample page
+const RESERVED_CODES = new Set(['DEMO']);
+
+// Words that say "this is a CG" rather than which one, left out of codes
+const GENERIC_WORDS = new Set(['CG', 'COMMUNITY', 'GROUP', 'GROUPS']);
+
+/**
+ * A short code from the name: the first word (up to 8 letters) plus the
+ * first letter of each other word, at most 10 characters.
+ * "Sunset Young Adults" → SUNSETYA, "Mission CG" → MISSION
+ */
+export function codeFromName(name) {
+  const words = (String(name ?? '').toUpperCase().match(/[A-Z0-9]+/g) ?? []).filter(w => !GENERIC_WORDS.has(w));
+  if (words.length === 0) return 'GROUP';
+  return (words[0].slice(0, 8) + words.slice(1).map(w => w[0]).join('')).slice(0, 10);
 }
 
 export function createGroupStore(sheetId, api = sheetsApi) {
@@ -79,14 +98,21 @@ export function createGroupStore(sheetId, api = sheetsApi) {
     api.rowsToObjects(m.header, m.rows).forEach(addMember);
   }
 
-  function newCode(groupName, neighborhood) {
-    const stem = codeStem(groupName, neighborhood);
-    for (let i = 0; i < 50; i++) {
-      const n = randomBytes(2);
-      const code = stem + CODE_DIGITS[n[0] % 8] + CODE_DIGITS[n[1] % 8];
-      if (!groups.has(code)) return code;
-    }
-    return stem + randomBytes(3).toString('hex').toUpperCase();
+  const nameTaken = name => [...groups.values()].some(g => nameKey(g.groupName) === nameKey(name));
+
+  /** The code a new group with this name gets: its name's code, or with 2, 3… if that's taken */
+  function nextCode(groupName) {
+    const base = codeFromName(groupName);
+    const taken = c => groups.has(c) || RESERVED_CODES.has(c);
+    if (!taken(base)) return base;
+    for (let n = 2; ; n++) if (!taken(`${base}${n}`)) return `${base}${n}`;
+  }
+
+  /** For the start form: is this name free, and what code would it get? */
+  function preview(groupName) {
+    const name = String(groupName ?? '').trim();
+    if (!name) return { available: false, code: '' };
+    return { available: !nameTaken(name), code: nextCode(name) };
   }
 
   async function create({ leaderName, leaderEmail, groupName, neighborhood }) {
@@ -94,13 +120,26 @@ export function createGroupStore(sheetId, api = sheetsApi) {
     leaderEmail = String(leaderEmail ?? '').trim().toLowerCase();
     groupName = String(groupName ?? '').trim();
     neighborhood = String(neighborhood ?? '').trim();
-    if (!leaderName || !groupName || !neighborhood) throw userError('Please fill in every field.');
+    if (!leaderName || !groupName) throw userError('Please fill in your name and your CG name.');
+    if ([leaderName, groupName, neighborhood].some(v => v.length > MAX_TEXT)) {
+      throw userError(`Please keep each answer under ${MAX_TEXT} characters.`);
+    }
     if (!isEmail(leaderEmail)) throw userError('Please enter a valid email.');
+    if (nameTaken(groupName)) {
+      throw userError(`There's already a CG called "${groupName}". Try adding your neighborhood or leader's name.`);
+    }
 
-    const code = newCode(groupName, neighborhood);
+    // Claim the name and code before the (slow) Sheet write, so two groups
+    // created at the same moment can't both get them
+    const code = nextCode(groupName);
     const row = { code, group_name: groupName, neighborhood, leader_name: leaderName, leader_email: leaderEmail, created_at: new Date().toISOString() };
-    await api.appendRowsRaw(sheetId, GROUPS_TAB, [GROUPS_HEADER.map(h => row[h])]);
     addGroup(row);
+    try {
+      await api.appendRowsRaw(sheetId, GROUPS_TAB, [GROUPS_HEADER.map(h => row[h])]);
+    } catch (err) {
+      groups.delete(code);
+      throw err;
+    }
     // The leader is a member too
     await join(code, [leaderEmail]);
     return groups.get(code);
@@ -128,6 +167,9 @@ export function createGroupStore(sheetId, api = sheetsApi) {
     init,
     create,
     join,
+    preview,
+    /** Every group, by name, for the /cg page */
+    list: () => [...groups.values()].sort((a, b) => a.groupName.localeCompare(b.groupName)),
     get: code => groups.get(normalizeCode(code)) ?? null,
     memberKeys: code => new Set(groups.get(normalizeCode(code))?.members.keys() ?? []),
   };
@@ -138,7 +180,7 @@ export function createGroupStore(sheetId, api = sheetsApi) {
  * email_key that join added.
  * @returns {{email: string, keys: string[], joinedAt: string}[]}
  */
-function memberList(g) {
+export function memberList(g) {
   const byRef = new Map();
   for (const [key, m] of g.members) {
     const entry = byRef.get(m.ref) ?? byRef.set(m.ref, { email: m.email, keys: [], joinedAt: m.joinedAt }).get(m.ref);
@@ -147,17 +189,17 @@ function memberList(g) {
   return [...byRef.values()].sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
 }
 
-export { memberList };
+/** What the pages show of a member's email: 3 letters, then the real domain, e.g. "mar***@gmail.com" */
+export function maskEmail(email) {
+  const e = String(email ?? '');
+  const at = e.lastIndexOf('@');
+  if (at < 0) return e ? `${e.slice(0, 3)}***` : '';
+  return `${e.slice(0, Math.min(3, at))}***${e.slice(at)}`;
+}
 
-/** Public view of a group: no emails, no member keys. */
+/** Public view of a group: only what the pages show. */
 export function publicGroup(g) {
-  return {
-    code: g.code,
-    groupName: g.groupName,
-    neighborhood: g.neighborhood,
-    leaderName: g.leaderName,
-    memberCount: new Set([...g.members.values()].map(m => m.ref)).size,
-  };
+  return { code: g.code, groupName: g.groupName };
 }
 
 function userError(message) {

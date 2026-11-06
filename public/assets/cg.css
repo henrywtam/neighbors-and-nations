@@ -1,31 +1,29 @@
 /* ============================================================
    Community Group pages — start a group, join.
-   Phone-first forms in the dashboard's navy + amber.
+   Phone-first forms in the CG page's night-sky palette.
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --navy: #0a1628;
-  --navy-panel: #0d1f3c;
-  --amber: #ffb43c;
-  --white: #ffffff;
-  --white-dim: rgba(255, 255, 255, 0.6);
-  --border: rgba(255, 255, 255, 0.14);
+  --navy: #081330;
+  --navy-panel: #10204A;
+  --amber: #FFB547;
+  --white: #F4EEE0;
+  --white-dim: #A3AEC8;
+  --border: rgba(244, 238, 224, 0.14);
   --error: #ff8a8a;
+  --ok: #7ED9A6;
 }
 
 body {
   min-height: 100vh;
-  background: var(--navy);
+  background: radial-gradient(90% 70% at 35% 0%, #12245a 0%, #0a1639 48%, #060e28 100%) fixed var(--navy);
   color: var(--white);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  display: flex;
-  justify-content: center;
-  padding: 32px 16px 48px;
+  font-family: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
-main { width: 100%; max-width: 440px; }
+main { width: 100%; max-width: 440px; margin: 0 auto; padding: 28px 16px 48px; }
 
 .topnav { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 24px; font-size: 14px; font-weight: 600; }
 .topnav a { color: var(--amber); text-decoration: none; }
@@ -45,6 +43,8 @@ h1 { font-size: 26px; line-height: 1.2; margin-bottom: 8px; }
 form { display: flex; flex-direction: column; gap: 16px; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
 .hint { font-weight: 400; color: var(--white-dim); font-size: 13px; }
+.hint.ok { color: var(--ok); font-weight: 600; }
+.hint.taken { color: var(--error); font-weight: 600; }
 
 input {
   font: inherit;
@@ -66,7 +66,7 @@ button, .button {
   border: 0;
   border-radius: 999px;
   background: var(--amber);
-  color: var(--navy);
+  color: #1a0f05;
   cursor: pointer;
   text-align: center;
   text-decoration: none;

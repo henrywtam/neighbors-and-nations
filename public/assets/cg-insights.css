@@ -8,7 +8,7 @@
 
 :root {
   /* Size unit: 1vw, but never more than the height allows, so it fits a 16:9 TV and a 16:10 laptop */
-  --u: min(1vw, 1.6vh);
+  --u: min(1vw, calc(1.6vh - 0.6px));
   --font: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
   --navy: #081330;
   --ink: #F4EEE0;
@@ -39,9 +39,10 @@ html, body {
   position: relative;
 }
 
-/* TV and laptop: exactly one screen, so the map and cloud shrink to fit */
+/* TV and laptop: exactly one screen under the shared tab bar, so the map and cloud shrink to fit */
 @media (min-width: 761px) {
-  #page { height: 100vh; }
+  body { height: 100vh; display: flex; flex-direction: column; }
+  #page { flex: 1; min-height: 0; }
 }
 
 /* ---------- header: title, count, two small QR cards ---------- */
@@ -49,6 +50,7 @@ html, body {
 #title-block { flex: 1; min-width: 0; }
 
 .eyebrow {
+  white-space: nowrap;
   font-size: clamp(13px, calc(1.2 * var(--u)), 26px);
   font-weight: 600;
   color: var(--ember);
@@ -73,12 +75,13 @@ html, body {
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
-#answered-label { display: block; font-size: clamp(14px, calc(1.15 * var(--u)), 26px); color: var(--muted); margin-top: 6px; }
+#answered-label { display: block; max-width: calc(9 * var(--u)); margin-left: auto; font-size: clamp(14px, calc(1.15 * var(--u)), 26px); color: var(--muted); margin-top: 6px; }
 
 #qrs { flex: none; display: flex; gap: calc(0.8 * var(--u)); }
 .qrc {
   display: flex;
-  align-items: center;
+  /* Step titles sit at the same height on all three cards */
+  align-items: flex-start;
   gap: calc(0.8 * var(--u));
   padding: calc(0.6 * var(--u));
   padding-right: calc(1.1 * var(--u));
@@ -88,8 +91,11 @@ html, body {
   text-decoration: none;
   color: var(--ink);
 }
+/* The third card stands out: it's the next step after joining */
+.qrc.fits { border-color: rgba(255, 181, 71, 0.6); background: linear-gradient(135deg, rgba(255, 122, 61, 0.22), rgba(255, 181, 71, 0.12)); }
+.qrc.fits .st { color: var(--ember); }
 .qr { width: calc(6.2 * var(--u)); height: auto; display: block; border-radius: 8px; }
-.qrt { display: flex; flex-direction: column; gap: calc(0.35 * var(--u)); max-width: calc(10 * var(--u)); }
+.qrt { display: flex; flex-direction: column; gap: calc(0.35 * var(--u)); max-width: calc(8.5 * var(--u)); padding-top: calc(0.3 * var(--u)); }
 .st { display: flex; align-items: center; gap: 8px; font-size: clamp(13px, calc(1.05 * var(--u)), 24px); font-weight: 700; line-height: 1.15; }
 .st i {
   font-style: normal;
@@ -200,6 +206,7 @@ html, body {
   font-size: clamp(14px, calc(1.05 * var(--u)), 24px);
 }
 #who-list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 #who-list li.empty { white-space: normal; color: var(--muted); }
 #who-list li.fresh { animation: fresh 1.6s ease-out; }
 @keyframes fresh { from { opacity: 0; transform: translateY(-6px); color: var(--ember); } }
@@ -235,7 +242,7 @@ html, body {
 #demo-tag {
   position: fixed;
   left: 50%;
-  top: 8px;
+  top: 48px; /* just under the shared tab bar */
   transform: translateX(-50%);
   padding: 4px 14px;
   border-radius: 999px;
@@ -250,8 +257,14 @@ html, body {
 
 /* ---------- phone ---------- */
 @media (max-width: 760px) {
-  #top { flex-direction: column; align-items: stretch; }
-  #count { text-align: left; }
+  #top { flex-direction: column; align-items: stretch; gap: 12px; }
+  #count { text-align: left; display: flex; align-items: baseline; gap: 10px; }
+  #answered-label { max-width: none; margin: 0; }
+  #qrs { flex-direction: column; gap: 8px; }
+  .qrt { max-width: none; padding-top: 0; }
+  .qrc, .qrc.fits { justify-content: center; padding: 12px 16px; }
+  .qrc.fits { background: transparent; border: 1px solid var(--ember); }
+  #demo-tag { position: static; transform: none; align-self: flex-start; }
   /* No point scanning a code on the phone it's on: the cards become two buttons */
   #qrs { align-self: stretch; }
   .qrc { flex: 1; justify-content: center; padding: 12px; border: 0; border-radius: 999px; background: var(--ember); color: #1a0f05; }

@@ -4,13 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Join Your CG — Neighbors &amp; Nations</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site-nav.css">
   <link rel="stylesheet" href="/assets/cg.css">
 </head>
 <body>
+<nav id="app-nav"><div id="site-tabs"></div></nav>
+<script src="/assets/site-nav.js"></script>
 <main>
   <nav class="topnav">
     <a id="back" href="/">← Back</a>
-    <a href="/world">See the whole church's map</a>
   </nav>
   <div class="eyebrow">Neighbors &amp; Nations</div>
   <h1>Join your CG</h1>
@@ -34,6 +40,7 @@
     <p>Haven't taken the survey yet? Take it now, using the same email.</p>
     <a class="button" href="https://realitysf.churchcenter.com/people/forms/1335453" target="_blank" rel="noopener">Take the survey</a>
     <a class="button secondary" id="group-link" href="/">See our group's page</a>
+    <a class="button secondary" id="partners-link" href="/partners">See partners that fit our group</a>
     <a class="button secondary" href="/world">See the whole church's map</a>
   </div>
 </main>
@@ -47,6 +54,7 @@
   const groupPage = code ? `/cg/${encodeURIComponent(code)}` : '/';
   document.getElementById('back').href = groupPage;
   document.getElementById('group-link').href = groupPage;
+  if (code) document.getElementById('partners-link').href = `${groupPage}/partners`;
   document.getElementById('back').addEventListener('click', (e) => {
     if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) {
       e.preventDefault();
@@ -81,6 +89,7 @@
       document.getElementById('lead').hidden = true;
       document.getElementById('done-code').textContent = data.group.code;
       document.getElementById('group-link').href = `/cg/${encodeURIComponent(data.group.code)}`;
+      document.getElementById('partners-link').href = `/cg/${encodeURIComponent(data.group.code)}/partners`;
       document.getElementById('done-name').textContent = data.group.groupName;
       document.getElementById('done').hidden = false;
     } catch (ex) {

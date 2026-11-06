@@ -1,0 +1,59 @@
+/* ============================================================
+   The tab bar every page shares (filled by site-nav.js)
+   ============================================================ */
+
+#app-nav {
+  flex: 0 0 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 6px;
+  background: #0a1628;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  z-index: 100;
+}
+
+#site-tabs { display: flex; gap: 6px; min-width: 0; }
+
+.app-tab {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s, background 0.18s;
+  font-family: inherit;
+}
+
+.tab-short { display: none; }
+
+.app-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-tab.active {
+  color: #ffb43c;
+  background: rgba(255, 180, 60, 0.08);
+}
+
+/* Phone: the tabs scroll sideways rather than wrap */
+@media (max-width: 760px) {
+  #app-nav { padding: 0 8px; }
+  #site-tabs { overflow-x: auto; scrollbar-width: none; }
+  #site-tabs::-webkit-scrollbar { display: none; }
+  .app-tab { padding: 6px 10px; font-size: 12.5px; letter-spacing: 0.02em; }
+  /* Short labels so all tabs fit a phone */
+  .tab-long { display: none; }
+  .tab-short { display: inline; }
+  /* Phones get no SF map view, so no SF tab */
+  .app-tab[data-tab="sf"] { display: none; }
+}

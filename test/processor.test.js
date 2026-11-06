@@ -343,3 +343,15 @@ test('emailKeys counts only people on the roster, including older rows linked by
   assert.equal(state.countryPicks.get('Kenya'), 1);
   assert.equal(state.countryPicks.get('Thailand'), undefined);
 });
+
+test('regionReach counts each person once per region, from region picks and countries', () => {
+  const data = makeSheetData({
+    regionMap: new Map([['Thailand', 'East & Southeast Asia'], ['Philippines', 'East & Southeast Asia']]),
+    responses: [
+      makeRow({ person_id: 'P1', connect_1_place: 'Thailand', connect_2_place: 'Philippines', connect_3_place: 'Region: East & Southeast Asia' }),
+      makeRow({ person_id: 'P2', connect_1_place: 'Philippines' }),
+    ],
+  });
+  const state = processResponses(data, defaultConfig, mockGeonames);
+  assert.equal(state.regionReach.get('East & Southeast Asia'), 2);
+});

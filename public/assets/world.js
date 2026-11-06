@@ -1056,7 +1056,7 @@ function toggleSfPartners() {
 async function switchView(view, pushHistory = true) {
   if (view === currentView) return;
   currentView = view;
-  document.querySelectorAll('.app-tab').forEach(b => {
+  document.querySelectorAll('.app-tab[data-view]').forEach(b => {
     b.classList.toggle('active', b.dataset.view === view);
   });
   document.querySelectorAll('.app-view').forEach(v => {
@@ -1075,8 +1075,12 @@ function setupAppTabs() {
   const partnersBtn = document.getElementById('sf-partners-toggle');
   if (partnersBtn) partnersBtn.addEventListener('click', toggleSfPartners);
 
-  document.querySelectorAll('.app-tab').forEach(btn => {
-    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  // World/SF tabs are links (shared nav) but switch in place on the dashboard
+  document.querySelectorAll('.app-tab[data-view]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView(btn.dataset.view);
+    });
   });
 
   // Pathname-based routing: read on load, follow browser back/forward

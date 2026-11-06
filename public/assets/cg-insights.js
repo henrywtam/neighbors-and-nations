@@ -7,8 +7,8 @@
 'use strict';
 
 const CODE = decodeURIComponent(location.pathname.split('/')[2] || '').toUpperCase();
-// ?demo: sample members join one by one, with their own sample answers; nothing is written anywhere
-const DEMO = new URLSearchParams(location.search).has('demo');
+// /cg/DEMO (or ?demo): sample members join one by one, with their own sample answers; nothing is written anywhere
+const DEMO = CODE === 'DEMO' || new URLSearchParams(location.search).has('demo');
 
 // Rows per panel; the page is laid out to fit one TV screen
 const ROWS = { hearts: 8, skills: 6 };
@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
   qr.src = `/api/groups/${encodeURIComponent(CODE)}/qr.svg`;
   qr.alt = `QR code to join group ${CODE}`;
   document.getElementById('join-code').textContent = CODE;
+  const fits = `/cg/${encodeURIComponent(CODE)}/partners${DEMO ? '?demo' : ''}`;
+  document.getElementById('fits').href = fits;
 
   // The cloud and map are drawn to their panels' size, so redraw when that changes
   new ResizeObserver(() => lastHearts && renderCloud(lastHearts)).observe(document.getElementById('hearts'));
@@ -78,13 +80,15 @@ async function runDemo() {
   const tag = document.createElement('div');
   tag.id = 'demo-tag';
   tag.textContent = 'Demo: sample members and sample answers';
-  document.body.append(tag);
+  document.getElementById('page').prepend(tag);
 
   let joined = 0;
   const step = async () => {
     const state = await fetch(`/api/groups/${encodeURIComponent(CODE)}/demo?joined=${joined}`).then(r => r.json());
-    if (joined === 0 && state.group.groupName === 'Sunset CG') {
-      document.getElementById('join-qr').src = '/api/qr/survey.svg'; // no such group: any scannable code will do
+    if (joined === 0 && !state.groupExists) {
+      // The public demo has no real group to join: show the survey QR, and send the join card to the CG list
+      document.getElementById('join-qr').src = '/api/qr/survey.svg';
+      document.getElementById('join').href = '/cg';
     }
     render(state);
     if (joined++ < state.demoTotal) setTimeout(step, DEMO_JOIN_MS);

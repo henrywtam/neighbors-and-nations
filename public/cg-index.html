@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Community Groups — Neighbors &amp; Nations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site-nav.css">
+  <link rel="stylesheet" href="/assets/pages.css">
+</head>
+<body>
+<nav id="app-nav"><div id="site-tabs"></div></nav>
+<script src="/assets/site-nav.js"></script>
+<main>
+  <header>
+    <div class="eyebrow">Neighbors &amp; Nations</div>
+    <h1>Community Groups</h1>
+    <p class="lead">Spend one CG night discovering what breaks your group's hearts, where you feel connected around the world, and the skills in the room. Then see which of our missionaries and partners fit you.</p>
+  </header>
+
+  <section>
+    <ol class="steps">
+      <li><b>Start your CG</b><span>Leaders set up their group in a minute and get a code made from the CG's name.</span></li>
+      <li><b>Everyone joins</b><span>Members take the survey and join with the code or QR, using the same email.</span></li>
+      <li><b>Put your page up</b><span>On CG night, open your group's page on a TV or laptop and watch it fill in live.</span></li>
+    </ol>
+    <a class="cta" href="/start-group">Start your CG</a>
+  </section>
+
+  <section class="demo-cg">
+    <div>
+      <h2>See what it looks like</h2>
+      <p class="section-lead">A sample CG of eight people joining one by one, with sample answers.</p>
+    </div>
+    <div class="cg-actions">
+      <a class="btn" href="/cg/DEMO">Open the demo page</a>
+      <a class="btn ghost" href="/cg/DEMO/partners">Demo: who fits us</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="all-head">
+      <h2>CGs ready <span class="count" id="count"></span></h2>
+      <input id="search" class="search" type="search" placeholder="Find your CG" aria-label="Find your CG" autocomplete="off">
+    </div>
+    <div class="cg-list" id="list"><p class="empty">Loading…</p></div>
+  </section>
+</main>
+<script>
+  'use strict';
+  let groups = [];
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function render() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const shown = groups.filter(g => !q || g.groupName.toLowerCase().includes(q) || g.code.toLowerCase().includes(q));
+    document.getElementById('count').textContent = groups.length ? `(${groups.length})` : '';
+    document.getElementById('list').innerHTML = shown.length
+      ? shown.map(g => {
+          const code = encodeURIComponent(g.code);
+          return `
+          <article class="cg-row">
+            <div class="cg-info">
+              <h3>${esc(g.groupName)}</h3>
+              <span class="cg-meta"><b>${esc(g.code)}</b> · ${g.memberCount} ${g.memberCount === 1 ? 'person has' : 'people have'} joined</span>
+            </div>
+            <div class="cg-actions">
+              <a class="btn" href="/cg/${code}">Open page</a>
+              <a class="btn ghost" href="/join/${code}">Join</a>
+              <a class="btn ghost" href="/cg/${code}/partners">Partners</a>
+            </div>
+          </article>`;
+        }).join('')
+      : `<p class="empty">${groups.length ? 'No CG matches that. Check the spelling, or start yours.' : 'No CGs yet. Be the first to start yours.'}</p>`;
+  }
+
+  document.getElementById('search').addEventListener('input', render);
+  fetch('/api/groups').then(r => (r.ok ? r.json() : Promise.reject())).then(d => { groups = d.groups; render(); })
+    .catch(() => { document.getElementById('list').innerHTML = '<p class="empty">We couldn\'t load the list. Please try again in a minute.</p>'; });
+</script>
+</body>
+</html>

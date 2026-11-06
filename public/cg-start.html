@@ -3,54 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Start a Group — Neighbors &amp; Nations</title>
+  <meta name="robots" content="noindex">
+  <title>Start Your CG — Neighbors &amp; Nations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site-nav.css">
   <link rel="stylesheet" href="/assets/cg.css">
 </head>
 <body>
+<nav id="app-nav"><div id="site-tabs"></div></nav>
+<script src="/assets/site-nav.js"></script>
 <main>
+  <nav class="topnav">
+    <a href="/cg">← All CGs</a>
+  </nav>
   <div class="eyebrow">Neighbors &amp; Nations</div>
-  <h1>Start your Community Group</h1>
-  <p class="lead">Set up your group once. You'll get a code to text your group, and a screen to put up on your CG night.</p>
+  <h1>Start your CG</h1>
+  <p class="lead">Set up your group once. You'll get a code made from your CG's name to share with your group, and a page to put up on CG night.</p>
 
   <form id="start-form">
+    <label>CG name
+      <input name="groupName" placeholder="e.g. Sunset Young Adults" maxlength="80" autocomplete="off" required>
+      <span class="hint" id="name-check">Each CG name can only be used once.</span>
+    </label>
     <label>Your name
-      <input name="leaderName" autocomplete="name" required>
+      <input name="leaderName" autocomplete="name" maxlength="80" required>
     </label>
     <label>Your email
-      <input name="leaderEmail" type="email" autocomplete="email" required>
+      <input name="leaderEmail" type="email" autocomplete="email" maxlength="254" required>
       <span class="hint">Use the email you used on the survey. Justice &amp; Outreach will follow up here.</span>
     </label>
-    <label>Group name
-      <input name="groupName" placeholder="e.g. Sunset Young Adults" required>
-    </label>
-    <label>Neighborhood your group meets in
-      <input name="neighborhood" list="nbhds" placeholder="e.g. Inner Sunset" required>
+    <label>Neighborhood your CG meets in <span class="hint">(optional)</span>
+      <input name="neighborhood" list="nbhds" placeholder="e.g. Inner Sunset" maxlength="80">
       <datalist id="nbhds"></datalist>
     </label>
     <p class="error" id="error"></p>
-    <button type="submit">Create group</button>
+    <button type="submit">Create our CG</button>
   </form>
 
   <div id="done" class="card" hidden>
-    <p>Your group code:</p>
+    <p>Your CG's code:</p>
     <div class="big-code" id="code"></div>
-    <p>Text this to your group. On your CG night, open your group's insights page. It shows a QR code members scan to join.</p>
-    <a class="button" id="screen-link">Open insights page</a>
+    <p>Share it with your group. On CG night, open your group's page: it shows QR codes for taking the survey and joining.</p>
+    <a class="button" id="screen-link">Open our CG page</a>
+    <a class="button secondary" id="partners-link">See partners that fit our CG</a>
+    <a class="button secondary" href="/cg">See all CGs</a>
     <div class="link-row">Join link to share:<a id="join-link"></a></div>
   </div>
 </main>
 <script>
+  'use strict';
   // Neighborhood suggestions from the SF map's own names
   fetch('/data/sf-neighborhoods.geojson').then(r => r.json()).then(geo => {
     const names = [...new Set(geo.features.map(f => f.properties.nhood).filter(Boolean))].sort();
-    document.getElementById('nbhds').innerHTML = names.map(n => `<option value="${n}">`).join('');
+    const list = document.getElementById('nbhds');
+    for (const n of names) list.append(Object.assign(document.createElement('option'), { value: n }));
   }).catch(() => {});
 
   const form = document.getElementById('start-form');
+  const check = document.getElementById('name-check');
+
+  // As the leader types, say whether the name is free and which code it gets
+  let checkTimer = null;
+  let nameFree = true;
+  form.groupName.addEventListener('input', () => {
+    clearTimeout(checkTimer);
+    const name = form.groupName.value.trim();
+    if (!name) { check.textContent = 'Each CG name can only be used once.'; check.className = 'hint'; nameFree = true; return; }
+    checkTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/groups/check?name=${encodeURIComponent(name)}`);
+        const d = await r.json();
+        if (form.groupName.value.trim() !== name) return; // they kept typing
+        nameFree = d.available;
+        check.textContent = d.available
+          ? `Your code will be ${d.code}`
+          : 'That name is taken. Try adding your neighborhood or leader\'s name.';
+        check.className = d.available ? 'hint ok' : 'hint taken';
+      } catch { /* the server checks again on submit */ }
+    }, 300);
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('button');
     const err = document.getElementById('error');
+    if (!nameFree) { err.textContent = 'Please pick a CG name that isn\'t taken.'; return; }
     btn.disabled = true;
     err.textContent = '';
     try {
@@ -64,6 +103,7 @@
       form.hidden = true;
       document.getElementById('code').textContent = data.group.code;
       document.getElementById('screen-link').href = data.links.screen;
+      document.getElementById('partners-link').href = `${data.links.screen}/partners`;
       const join = document.getElementById('join-link');
       join.href = join.textContent = data.links.join;
       document.getElementById('done').hidden = false;

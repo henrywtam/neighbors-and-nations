@@ -10,8 +10,9 @@ import * as geonames from './geonames.js';
 import config from './config.js';
 import { syncPlanningCenter } from './sync-pc.js';
 import QRCode from 'qrcode';
-import { createGroupStore, publicGroup, memberList } from './groups.js';
+import { createGroupStore, publicGroup, memberList, maskEmail } from './groups.js';
 import { demoGroup, DEMO_MEMBER_COUNT } from './demo.js';
+import { createPartnerStore, publicPartner, matchPartners } from './partners.js';
 
 const FORM_ID = process.env.PLANNING_CENTER_FORM_ID ?? '1335453';
 
@@ -36,6 +37,8 @@ const groupSseClients = new Map();
 let cache = null;
 /** @type {ReturnType<typeof createGroupStore> | null} */
 let groups = null;
+/** @type {ReturnType<typeof createPartnerStore> | null} */
+let partners = null;
 
 /** Whether the last Sheets check succeeded (drives the Live/Reconnecting badge). */
 let sheetsHealthy = true;
@@ -52,6 +55,7 @@ function serializeState(state) {
     ...state,
     countryPicks: Object.fromEntries(state.countryPicks),
     regionPicks: Object.fromEntries(state.regionPicks),
+    regionReach: Object.fromEntries(state.regionReach ?? []),
     regionCountries: state.regionCountries
       ? Object.fromEntries([...state.regionCountries.entries()])
       : {},
@@ -85,14 +89,56 @@ function pushSseEvent(data) {
 function groupState(g) {
   const info = publicGroup(g);
   const state = processResponses(cache.sheetData(), config, geonames, { emailKeys: groups.memberKeys(g.code) });
-  // Who has joined, newest first
-  const roster = memberList(g).map(m => ({ email: m.email }));
+  // Who has joined, newest first; emails are masked here so full addresses never leave the server
+  const roster = memberList(g).map(m => ({ email: maskEmail(m.email) }));
   return {
     type: 'state',
     ...serializeState({ ...state, isLive: sheetsHealthy }),
     group: info,
     members: roster,
   };
+}
+
+/**
+ * Tiny in-memory rate limiter, per client IP. A CG night has a whole group on
+ * one church wifi, so the join limit is generous; looking up codes that don't
+ * exist is limited hard, so codes (and the emails behind them) can't be guessed.
+ */
+function rateLimit({ windowMs, max, message, countEveryRequest = true }) {
+  const hits = new Map(); // ip → [timestamps]
+  return {
+    middleware(req, res, next) {
+      const now = Date.now();
+      const recent = (hits.get(req.ip) ?? []).filter(t => now - t < windowMs);
+      hits.set(req.ip, recent);
+      if (recent.length >= max) return res.status(429).json({ error: message });
+      if (countEveryRequest) recent.push(now);
+      next();
+    },
+    /** Count one request by hand, for limits that don't count every request */
+    hit(req) {
+      const recent = hits.get(req.ip) ?? [];
+      recent.push(Date.now());
+      hits.set(req.ip, recent);
+    },
+    sweep() {
+      const now = Date.now();
+      for (const [ip, ts] of hits) if (!ts.some(t => now - t < windowMs)) hits.delete(ip);
+    },
+  };
+}
+
+const TEN_MIN = 10 * 60 * 1000;
+const createLimit = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Too many groups created from here. Try again later.' });
+const joinLimit = rateLimit({ windowMs: TEN_MIN, max: 150, message: 'Too many joins from here. Try again in a few minutes.' });
+const missLimit = rateLimit({ windowMs: TEN_MIN, max: 30, message: 'Too many tries. Try again in a few minutes.', countEveryRequest: false });
+setInterval(() => [createLimit, joinLimit, missLimit].forEach(l => l.sweep()), TEN_MIN).unref();
+
+/** Look up a group by the :code param; unknown codes count against the miss limit. */
+function findGroup(req) {
+  const g = groups.get(req.params.code);
+  if (!g) missLimit.hit(req);
+  return g;
 }
 
 function pushGroupState(code) {
@@ -167,6 +213,8 @@ async function checkSheet() {
 }
 
 async function checkReference() {
+  // J&O edit the Partners tab by hand; pick up their changes on the same schedule
+  partners?.load().catch(err => console.error('[index] Partners tab read failed (keeping cached list):', err.message));
   try {
     if (await cache.refreshReference()) {
       console.log('[index] Reference tabs changed.');
@@ -240,7 +288,8 @@ function isOurFormSubmission(body) {
 // ---------------------------------------------------------------------------
 
 const app = express();
-app.set('trust proxy', true);
+// One proxy hop (Railway's edge): req.ip is the visitor, not a spoofable header
+app.set('trust proxy', 1);
 
 app.use(express.static(PUBLIC_DIR));
 
@@ -267,7 +316,9 @@ app.get('/status', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'status.html')))
 // Community Group pages
 app.get('/start-group', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-start.html')));
 app.get(['/join', '/join/:code'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-join.html')));
+app.get('/cg', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-index.html')));
 app.get('/cg/:code', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg.html')));
+app.get(['/partners', '/cg/:code/partners'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'partners.html')));
 
 // ---------------------------------------------------------------------------
 // Community Group API
@@ -284,66 +335,118 @@ function sendError(res, err) {
   res.status(500).json({ error: 'Something went wrong saving that. Please try again.' });
 }
 
-app.post('/api/groups', express.json(), requireGroups, async (req, res) => {
+// Every CG that's been set up, for the /cg page
+app.get('/api/groups', requireGroups, (_req, res) => {
+  res.json({ groups: groups.list().map(g => ({ ...publicGroup(g), memberCount: memberList(g).length })) });
+});
+
+// For the start form: is this CG name free, and what code would it get?
+app.get('/api/groups/check', requireGroups, (req, res) => {
+  res.json(groups.preview(String(req.query.name ?? '').slice(0, 200)));
+});
+
+app.post('/api/groups', createLimit.middleware, express.json({ limit: '10kb' }), requireGroups, async (req, res) => {
   try {
     const g = await groups.create(req.body ?? {});
     res.json({ group: publicGroup(g), links: groupLinks(req, g.code) });
   } catch (err) { sendError(res, err); }
 });
 
-app.get('/api/groups/:code', requireGroups, (req, res) => {
-  const g = groups.get(req.params.code);
+app.get('/api/groups/:code', missLimit.middleware, requireGroups, (req, res) => {
+  const g = findGroup(req);
   if (!g) return res.status(404).json({ error: "We couldn't find that group code." });
   res.json({ group: publicGroup(g), links: groupLinks(req, g.code) });
 });
 
-app.post('/api/groups/:code/join', express.json(), requireGroups, async (req, res) => {
+app.post('/api/groups/:code/join', joinLimit.middleware, missLimit.middleware, express.json({ limit: '10kb' }), requireGroups, async (req, res) => {
   try {
+    if (!findGroup(req)) return res.status(400).json({ error: "We couldn't find that group code. Check it and try again." });
     const { group } = await groups.join(req.params.code, [req.body?.email]);
     res.json({ group: publicGroup(group) });
     pushGroupState(group.code);
   } catch (err) { sendError(res, err); }
 });
 
-app.get('/api/groups/:code/state', requireGroups, (req, res) => {
-  const g = groups.get(req.params.code);
+app.get('/api/groups/:code/state', missLimit.middleware, requireGroups, (req, res) => {
+  const g = findGroup(req);
   if (!g) return res.status(404).json({ error: "We couldn't find that group code." });
   if (!cache) return res.status(503).json({ error: 'State not yet available' });
   res.json(groupState(g));
 });
 
-// Demo mode for the CG page: the first ?joined= sample members, through the real processor
-app.get('/api/groups/:code/demo', (req, res) => {
-  if (!cache) return res.status(503).json({ error: 'State not yet available' });
-  const g = groups?.get(req.params.code);
-  const { responses, members } = demoGroup(parseInt(req.query.joined ?? DEMO_MEMBER_COUNT));
+/** Demo-mode state: the first `joined` sample members, through the real processor */
+function demoState(code, joined) {
+  const g = groups?.get(code);
+  const { responses, members } = demoGroup(joined);
   const state = processResponses({ ...cache.sheetData(), responses }, { ...config, showTestRows: false }, geonames);
-  res.json({
+  return {
     type: 'state',
     ...serializeState({ ...state, isLive: true }),
-    group: g ? publicGroup(g) : { code: req.params.code.toUpperCase(), groupName: 'Sunset CG' },
+    group: g ? publicGroup(g) : { code: String(code).toUpperCase(), groupName: 'Sunset CG' },
+    groupExists: !!g,
     members,
     demoTotal: DEMO_MEMBER_COUNT,
+  };
+}
+
+// Demo mode for the CG page: the first ?joined= sample members
+app.get('/api/groups/:code/demo', (req, res) => {
+  if (!cache) return res.status(503).json({ error: 'State not yet available' });
+  res.json(demoState(req.params.code, parseInt(req.query.joined) || 0));
+});
+
+// ---------------------------------------------------------------------------
+// Partners and missionaries
+// ---------------------------------------------------------------------------
+
+function requirePartners(_req, res, next) {
+  if (!partners) return res.status(503).json({ error: 'Partners are not available right now. Try again in a minute.' });
+  next();
+}
+
+// Everyone, for the church-wide page
+app.get('/api/partners', requirePartners, (_req, res) => {
+  res.json({ partners: partners.visible().map(publicPartner) });
+});
+
+// Everyone, with the ones that fit this group highlighted and the reasons why.
+// ?demo matches against the demo group's sample answers instead.
+app.get('/api/groups/:code/partners', missLimit.middleware, requirePartners, (req, res) => {
+  if (!cache) return res.status(503).json({ error: 'State not yet available' });
+  let state;
+  if (req.query.demo !== undefined) {
+    state = demoState(req.params.code, DEMO_MEMBER_COUNT);
+  } else {
+    if (!groups) return res.status(503).json({ error: 'Groups are not available right now. Try again in a minute.' });
+    const g = findGroup(req);
+    if (!g) return res.status(404).json({ error: "We couldn't find that group code." });
+    state = groupState(g);
+  }
+  res.json({
+    group: state.group,
+    totalPeople: state.totalPeople,
+    partners: matchPartners(partners.visible(), state).map(({ partner, fit, reasons }) => ({ ...publicPartner(partner), fit, reasons })),
   });
 });
 
 // QR codes on the CG page: 1 takes the survey, 2 joins the group
 const SURVEY_URL = `https://realitysf.churchcenter.com/people/forms/${FORM_ID}`;
 
-async function sendQr(res, url) {
+async function sendQr(res, url, cache) {
   const svg = await QRCode.toString(url, {
     type: 'svg', margin: 1, errorCorrectionLevel: 'M',
     color: { dark: '#081330', light: '#F4EEE0' },
   });
-  res.type('image/svg+xml').set('Cache-Control', 'public, max-age=3600').send(svg);
+  res.type('image/svg+xml').set('Cache-Control', cache).send(svg);
 }
 
-app.get('/api/qr/survey.svg', (_req, res) => sendQr(res, SURVEY_URL));
+app.get('/api/qr/survey.svg', (_req, res) => sendQr(res, SURVEY_URL, 'public, max-age=3600'));
 
-app.get('/api/groups/:code/qr.svg', requireGroups, (req, res) => {
-  const g = groups.get(req.params.code);
+// Built from the request's host, so never cached by anything shared
+app.get('/api/groups/:code/qr.svg', missLimit.middleware, requireGroups, (req, res) => {
+  const g = findGroup(req);
   if (!g) return res.sendStatus(404);
-  sendQr(res, groupLinks(req, g.code).join);
+  sendQr(res, groupLinks(req, g.code).join, 'private, max-age=3600');
 });
 
 // API: current state as JSON
@@ -384,6 +487,7 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => {
     clearInterval(pingInterval);
     clients.delete(res);
+    if (g && clients.size === 0) groupSseClients.delete(g.code);
   });
 });
 
@@ -452,6 +556,15 @@ async function start() {
     console.log('[index] Community Groups loaded.');
   } catch (err) {
     console.error('[index] Community Groups load failed (group pages disabled):', err.message);
+  }
+
+  const partnerStore = createPartnerStore(sheetId);
+  try {
+    await partnerStore.load();
+    partners = partnerStore;
+    console.log(`[index] Partners loaded (${partners.visible().length} shown).`);
+  } catch (err) {
+    console.error('[index] Partners load failed (partner pages disabled):', err.message);
   }
   rebuildState();
 
