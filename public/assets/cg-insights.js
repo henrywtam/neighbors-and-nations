@@ -117,8 +117,6 @@ function render(state) {
   document.getElementById('group-name').textContent = `${g.groupName}: Our Heart for the World`;
   document.getElementById('join-step').textContent = `Join ${g.groupName}`;
   document.getElementById('answered').textContent = n;
-  document.getElementById('answered-label').textContent =
-    n === 1 ? 'person has shared their heart' : 'people have shared their heart';
   setLive(state.isLive !== false);
   renderWho(state.members || []);
 
