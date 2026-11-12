@@ -53,6 +53,18 @@ test('join: lowercase code works, two emails are one member, rejoining adds noth
   await assert.rejects(store.join(code, ['not-an-email']), { status: 400 });
 });
 
+test('one email can join several groups', async () => {
+  const s = fakeApi();
+  const store = createGroupStore('sheet', s.api);
+  await store.init();
+  const cg = await store.create(LEADER);
+  const staff = await store.create({ ...LEADER, groupName: 'Staff' });
+  assert.equal((await store.join(cg.code, ['a@x.com'])).added, 1);
+  assert.equal((await store.join(staff.code, ['A@x.com'])).added, 1);
+  assert.ok(store.memberKeys(cg.code).has(emailKey('a@x.com')));
+  assert.ok(store.memberKeys(staff.code).has(emailKey('a@x.com')));
+});
+
 test('groups and rosters survive a reload from the tabs', async () => {
   const s = fakeApi();
   const store = createGroupStore('sheet', s.api);

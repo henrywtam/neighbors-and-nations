@@ -15,7 +15,7 @@ Live dashboard for a church survey ("Neighbors & Nations"). Shows where congrega
 | `src/processor.js` | Pure data transformation. `processResponses(sheetData, config, geonames)` → ProcessedState. No I/O. |
 | `src/geonames.js` | In-memory city lookup from `data/cities15k.json`. Also exports `countryNameToCode` / `countryAliases`, derived from `countries.json`. |
 | `public/data/countries.json` | Single country list shared by server and map: name, alpha-2, ISO numeric (zero-padded), typed-name `aliases`, and extra map `shapes` (territories rolled into a parent, e.g. Puerto Rico → US). |
-| `src/groups.js` | Community Groups store: create a group (unique name; code made from it, e.g. Sunset Young Adults → SUNSETYA, then SUNSETYA2…), join by code + email. Loaded once from the group tabs, then append-only. |
+| `src/groups.js` | Community Groups store: create a group (unique name; code made from it, e.g. Sunset Young Adults → SUNSETYA, then SUNSETYA2…), join by code + email (one email can join any number of groups; open to any grouping, e.g. staff, though the UI says CG). Loaded once from the group tabs, then append-only. |
 | `src/partners.js` | Supported missionaries and global partners from the Partners tab (seeded once with the starting list), plus `matchPartners()`: scores each partner against a group's results and explains why it fits. |
 | `src/index.js` | Express server, SSE stream, Meta check loop, Planning Center webhook (`POST /webhooks/planning-center`), Community Group pages and API. |
 
