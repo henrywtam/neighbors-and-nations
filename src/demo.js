@@ -1,7 +1,7 @@
 /**
  * demo.js
  *
- * Sample Community Group for the CG page's demo mode (/cg/CODE?demo): eight
+ * Sample group for the Common Ground page's demo mode (/group/CODE?demo): eight
  * made-up members, each with survey answers, written as Responses rows so the
  * real processor turns them into results. Every number on the demo page is
  * then out of the people it shows. Nothing here touches the Sheet.

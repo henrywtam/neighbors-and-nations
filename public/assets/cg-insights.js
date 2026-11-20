@@ -1,16 +1,19 @@
 /* ============================================================
-   cg-insights.js — Community Group insights page (/cg/CODE)
+   cg-insights.js — Common Ground group page (/group/CODE)
    One screen of what the group shares, from that roster's survey
-   answers only, plus a running list of who has joined. Live over SSE.
+   answers only, plus a list of who has joined. Kept current over SSE.
    ============================================================ */
 
 'use strict';
 
 const CODE = decodeURIComponent(location.pathname.split('/')[2] || '').toUpperCase();
-// /cg/DEMO (or ?demo): sample members join one by one, with their own sample answers; nothing is written anywhere
-const DEMO = CODE === 'DEMO' || new URLSearchParams(location.search).has('demo');
+// /group/DEMO (or ?demo): a full sample group with sample answers; nothing is written anywhere.
+// Add ?play to watch the sample members join one by one instead.
+const PARAMS = new URLSearchParams(location.search);
+const DEMO = CODE === 'DEMO' || PARAMS.has('demo');
+const PLAY = DEMO && PARAMS.has('play');
 
-// Rows per panel; the page is laid out to fit one TV screen
+// Rows per panel; the page is laid out to fit one screen
 const ROWS = { hearts: 8, skills: 6 };
 
 // An icon per survey vocation; write-ins ("Other: …") get the fallback
@@ -41,10 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const join = document.getElementById('join');
   join.href = `/join/${encodeURIComponent(CODE)}`;
   const qr = document.getElementById('join-qr');
-  qr.src = `/api/groups/${encodeURIComponent(CODE)}/qr.svg`;
+  if (CODE !== 'DEMO') qr.src = `/api/groups/${encodeURIComponent(CODE)}/qr.svg`;
   qr.alt = `QR code to join group ${CODE}`;
   document.getElementById('join-code').textContent = CODE;
-  const fits = `/cg/${encodeURIComponent(CODE)}/partners${DEMO ? '?demo' : ''}`;
+  // Long codes (REALITYSS, SUNSETYA2) shrink to fit their card instead of spilling into the next one
+  new ResizeObserver(fitCode).observe(document.getElementById('qrs'));
+  document.fonts?.ready.then(fitCode);
+  const fits = `/group/${encodeURIComponent(CODE)}/partners${DEMO ? '?demo' : ''}`;
   document.getElementById('fits').href = fits;
 
   // The cloud and map are drawn to their panels' size, so redraw when that changes
@@ -72,40 +78,58 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Demo mode (/cg/CODE?demo): for previews and the CG night video
+// Demo mode (/group/CODE?demo): for previews and the explainer video
 // ---------------------------------------------------------------------------
 const DEMO_JOIN_MS = 2500;
 
 async function runDemo() {
   const tag = document.createElement('div');
   tag.id = 'demo-tag';
-  tag.textContent = 'Demo: sample members and sample answers';
+  tag.textContent = PLAY ? 'Demo: sample members joining, with sample answers' : 'Demo: sample group and sample answers';
   document.getElementById('page').prepend(tag);
 
-  let joined = 0;
+  // Static: everyone at once (the server caps joined at the sample size). Play: from zero, one at a time.
+  let joined = PLAY ? 0 : 999;
+  let first = true;
   const step = async () => {
     const state = await fetch(`/api/groups/${encodeURIComponent(CODE)}/demo?joined=${joined}`).then(r => r.json());
-    if (joined === 0 && !state.groupExists) {
-      // The public demo has no real group to join: show the survey QR, and send the join card to the CG list
-      document.getElementById('join-qr').src = '/api/qr/survey.svg';
-      document.getElementById('join').href = '/cg';
+    if (first) {
+      first = false;
+      if (!state.groupExists) {
+        // The public demo has no real group to join: show the survey QR, and send the join card to the group list
+        document.getElementById('join-qr').src = '/api/qr/survey.svg';
+        document.getElementById('join').href = '/group';
+      } else {
+        document.getElementById('join-qr').src = `/api/groups/${encodeURIComponent(CODE)}/qr.svg`;
+      }
     }
     render(state);
-    if (joined++ < state.demoTotal) setTimeout(step, DEMO_JOIN_MS);
+    if (PLAY && joined++ < state.demoTotal) setTimeout(step, DEMO_JOIN_MS);
   };
   step();
+}
+
+function fitCode() {
+  const el = document.getElementById('join-code');
+  el.style.fontSize = '';
+  const room = el.parentElement.clientWidth;
+  if (el.scrollWidth > room) el.style.fontSize = `${Math.floor(parseFloat(getComputedStyle(el).fontSize) * room / el.scrollWidth * 0.95)}px`;
 }
 
 function showMissing(message) {
   document.getElementById('group-name').textContent = CODE || 'No group code';
   const notice = document.getElementById('notice');
   notice.textContent = message || "We couldn't find that group code.";
+  notice.append(' ', Object.assign(document.createElement('a'), { href: '/group', textContent: 'See all groups' }));
   notice.hidden = false;
+  // No group to join or match, so no count or cards
+  for (const id of ['count', 'qrs']) document.getElementById(id).hidden = true;
 }
 
+// Updates arrive quietly; the badge only shows when the connection drops
 function setLive(ok) {
+  document.getElementById('status').hidden = ok;
   document.getElementById('live-dot').classList.toggle('off', !ok);
-  document.getElementById('live-label').textContent = ok ? 'Live' : 'Reconnecting';
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +139,7 @@ function render(state) {
   const g = state.group;
   const n = state.totalPeople || 0;
   document.getElementById('group-name').textContent = `${g.groupName}: Our Heart for the World`;
-  document.getElementById('join-step').textContent = `Join ${g.groupName}`;
+  document.getElementById('join-step').textContent = g.groupName.length <= 18 ? `Join ${g.groupName}` : 'Join our group';
   document.getElementById('answered').textContent = n;
   setLive(state.isLive !== false);
   renderWho(state.members || []);

@@ -77,7 +77,7 @@ export function parsePlaceValue(value) {
  * @param {object} config
  * @param {object} geonames  - must expose lookupCity(cityName, countryName)
  * @param {{emailKeys?: Set<string>}} [options] - emailKeys: count only people
- *   whose email_key is in the set (a Community Group's roster)
+ *   whose email_key is in the set (a group's roster)
  * @returns {ProcessedState}
  */
 export function processResponses(sheetData, config, geonames, { emailKeys = null } = {}) {

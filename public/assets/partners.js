@@ -1,7 +1,7 @@
 /* ============================================================
    partners.js — supported missionaries and global partners page
    /partners            everyone
-   /cg/CODE/partners    everyone, with the ones that fit the group
+   /group/CODE/partners    everyone, with the ones that fit the group
                         highlighted and the reasons why (?demo: the
                         demo group's sample answers)
    ============================================================ */
@@ -9,7 +9,7 @@
 'use strict';
 
 const parts = location.pathname.split('/');
-const CODE = parts[1] === 'cg' ? decodeURIComponent(parts[2] || '').toUpperCase() : null;
+const CODE = parts[1] === 'group' ? decodeURIComponent(parts[2] || '').toUpperCase() : null;
 const DEMO = CODE === 'DEMO' || new URLSearchParams(location.search).has('demo');
 
 let partners = [];
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 /** On a group's partner page, a link back to that group's page */
 function setupNav() {
   if (!CODE) return;
-  document.getElementById('group-link').href = `/cg/${encodeURIComponent(CODE)}${DEMO ? '?demo' : ''}`;
+  document.getElementById('group-link').href = `/group/${encodeURIComponent(CODE)}${DEMO ? '?demo' : ''}`;
   document.getElementById('group-nav').hidden = false;
 }
 

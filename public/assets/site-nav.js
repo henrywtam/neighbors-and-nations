@@ -12,13 +12,13 @@
   const TABS = [
     { id: 'world', href: '/world', label: '🌍 World Map', short: '🌍 Map', view: 'world' },
     { id: 'sf', href: '/sf', label: '🌉 San Francisco', short: '🌉 SF', view: 'sf' },
-    { id: 'cg', href: '/cg', label: '👥 Community Groups', short: '👥 CGs' },
+    { id: 'cg', href: '/group', label: '👥 Common Ground', short: '👥 Groups' },
     { id: 'partners', href: '/partners', label: '🤝 Missionaries & Partners', short: '🤝 Partners' },
   ];
 
   function section(path) {
-    if (path === '/partners' || /^\/cg\/[^/]+\/partners\/?$/.test(path)) return 'partners';
-    if (path === '/cg' || path.startsWith('/cg/') || path.startsWith('/join') || path === '/start-group') return 'cg';
+    if (path === '/partners' || /^\/group\/[^/]+\/partners\/?$/.test(path)) return 'partners';
+    if (path === '/group' || path.startsWith('/group/') || path.startsWith('/join') || path === '/start-group') return 'cg';
     if (path.replace(/^\/tv/, '') === '/sf') return 'sf';
     return 'world';
   }

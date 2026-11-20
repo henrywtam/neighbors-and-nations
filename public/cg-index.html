@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>Community Groups — Neighbors &amp; Nations</title>
+  <title>Common Ground — Neighbors &amp; Nations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
@@ -17,35 +17,36 @@
 <main>
   <header>
     <div class="eyebrow">Neighbors &amp; Nations</div>
-    <h1>Community Groups</h1>
-    <p class="lead">Spend one CG night discovering what breaks your group's hearts, where you feel connected around the world, and the skills in the room. Then see which of our missionaries and partners fit you.</p>
-    <p class="lead">Built for CGs, but open to any group: a staff team, a ministry team, a class. You can be in more than one group with the same email.</p>
+    <h1>Common Ground</h1>
+    <p class="lead">Discover what your group has in common: what breaks your hearts, where you feel connected around the world, and the skills you bring. Then see which of our missionaries and partners fit you.</p>
+    <p class="lead">Any group can use it: a community group, a staff or ministry team, a class, a group of friends. You can be in more than one group with the same email.</p>
   </header>
 
   <section>
     <ol class="steps">
-      <li><b>Start your CG</b><span>Leaders set up their group in a minute and get a code made from the CG's name.</span></li>
+      <li><b>Start your group</b><span>A leader sets up the group in a minute and gets a code made from the group's name.</span></li>
       <li><b>Everyone joins</b><span>Members take the survey and join with the code or QR, using the same email.</span></li>
-      <li><b>Put your page up</b><span>On CG night, open your group's page on a TV or laptop and watch it fill in live.</span></li>
+      <li><b>See your common ground</b><span>Open your group's page to see what you share, together or on your own time.</span></li>
     </ol>
-    <a class="cta" href="/start-group">Start your CG</a>
+    <a class="cta" href="/start-group">Start your group</a>
   </section>
 
   <section class="demo-cg">
     <div>
       <h2>See what it looks like</h2>
-      <p class="section-lead">A sample CG of eight people joining one by one, with sample answers.</p>
+      <p class="section-lead">A sample group of eight people, with sample answers. Or watch them join one by one.</p>
     </div>
     <div class="cg-actions">
-      <a class="btn" href="/cg/DEMO">Open the demo page</a>
-      <a class="btn ghost" href="/cg/DEMO/partners">Demo: who fits us</a>
+      <a class="btn" href="/group/DEMO">Open the demo page</a>
+      <a class="btn ghost" href="/group/DEMO?play">Watch people join</a>
+      <a class="btn ghost" href="/group/DEMO/partners">Demo: who fits us</a>
     </div>
   </section>
 
   <section>
     <div class="all-head">
-      <h2>CGs ready <span class="count" id="count"></span></h2>
-      <input id="search" class="search" type="search" placeholder="Find your CG" aria-label="Find your CG" autocomplete="off">
+      <h2>Groups <span class="count" id="count"></span></h2>
+      <input id="search" class="search" type="search" placeholder="Find your group" aria-label="Find your group" autocomplete="off">
     </div>
     <div class="cg-list" id="list"><p class="empty">Loading…</p></div>
   </section>
@@ -70,13 +71,13 @@
               <span class="cg-meta"><b>${esc(g.code)}</b> · ${g.memberCount} ${g.memberCount === 1 ? 'person has' : 'people have'} joined</span>
             </div>
             <div class="cg-actions">
-              <a class="btn" href="/cg/${code}">Open page</a>
+              <a class="btn" href="/group/${code}">Open page</a>
               <a class="btn ghost" href="/join/${code}">Join</a>
-              <a class="btn ghost" href="/cg/${code}/partners">Partners</a>
+              <a class="btn ghost" href="/group/${code}/partners">Partners</a>
             </div>
           </article>`;
         }).join('')
-      : `<p class="empty">${groups.length ? 'No CG matches that. Check the spelling, or start yours.' : 'No CGs yet. Be the first to start yours.'}</p>`;
+      : `<p class="empty">${groups.length ? 'No group matches that. Check the spelling, or start yours.' : 'No groups yet. Be the first to start yours.'}</p>`;
   }
 
   document.getElementById('search').addEventListener('input', render);

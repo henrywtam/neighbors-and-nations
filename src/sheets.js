@@ -406,7 +406,7 @@ function parseApprovals(values) {
 }
 
 // ---------------------------------------------------------------------------
-// Community Group tabs (append-only, written by the app)
+// Common Ground group tabs (append-only, written by the app)
 // ---------------------------------------------------------------------------
 
 /**

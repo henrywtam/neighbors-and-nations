@@ -1,9 +1,9 @@
 /**
  * groups.js
  *
- * Community Groups: a leader creates a group (names are unique) and gets a
+ * Common Ground groups (any kind: community group, staff team, class): a leader creates a group (names are unique) and gets a
  * code made from its name, e.g. "Sunset Young Adults" → SUNSETYA; members join
- * with the code and the email they used on the survey. The CG insights page
+ * with the code and the email they used on the survey. The group page
  * then shows results only for responses whose email_key is on that group's
  * roster.
  *
@@ -45,7 +45,7 @@ export function nameKey(name) {
   return String(name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-// Codes no group can take: /cg/DEMO is the public sample page
+// Codes no group can take: /group/DEMO is the public sample page
 const RESERVED_CODES = new Set(['DEMO']);
 
 // Words that say "this is a CG" rather than which one, left out of codes
@@ -120,13 +120,13 @@ export function createGroupStore(sheetId, api = sheetsApi) {
     leaderEmail = String(leaderEmail ?? '').trim().toLowerCase();
     groupName = String(groupName ?? '').trim();
     neighborhood = String(neighborhood ?? '').trim();
-    if (!leaderName || !groupName) throw userError('Please fill in your name and your CG name.');
+    if (!leaderName || !groupName) throw userError('Please fill in your name and your group name.');
     if ([leaderName, groupName, neighborhood].some(v => v.length > MAX_TEXT)) {
       throw userError(`Please keep each answer under ${MAX_TEXT} characters.`);
     }
     if (!isEmail(leaderEmail)) throw userError('Please enter a valid email.');
     if (nameTaken(groupName)) {
-      throw userError(`There's already a CG called "${groupName}". Try adding your neighborhood or leader's name.`);
+      throw userError(`There's already a group called "${groupName}". Try adding your neighborhood or leader's name.`);
     }
 
     // Claim the name and code before the (slow) Sheet write, so two groups
@@ -168,7 +168,7 @@ export function createGroupStore(sheetId, api = sheetsApi) {
     create,
     join,
     preview,
-    /** Every group, by name, for the /cg page */
+    /** Every group, by name, for the /group page */
     list: () => [...groups.values()].sort((a, b) => a.groupName.localeCompare(b.groupName)),
     get: code => groups.get(normalizeCode(code)) ?? null,
     memberKeys: code => new Set(groups.get(normalizeCode(code))?.members.keys() ?? []),

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join Your CG — Neighbors &amp; Nations</title>
+  <title>Join Your Group — Neighbors &amp; Nations</title>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,7 +19,7 @@
     <a id="back" href="/">← Back</a>
   </nav>
   <div class="eyebrow">Neighbors &amp; Nations</div>
-  <h1>Join your CG</h1>
+  <h1>Join your group</h1>
   <p class="lead" id="lead">Add yourself to your group so your survey answers show up on your group's map. Only combined results are shown, never yours on their own.</p>
 
   <form id="join-form">
@@ -36,7 +36,7 @@
 
   <div id="done" class="card" hidden>
     <div class="big-code" id="done-code"></div>
-    <p>You're in <strong id="done-name"></strong>. Your answers will show up on the group screen.</p>
+    <p>You're in <strong id="done-name"></strong>. Your answers will show up on your group's page.</p>
     <p>Haven't taken the survey yet? Take it now, using the same email.</p>
     <a class="button" href="https://realitysf.churchcenter.com/people/forms/1335453" target="_blank" rel="noopener">Take the survey</a>
     <a class="button secondary" id="group-link" href="/">See our group's page</a>
@@ -51,7 +51,7 @@
   const code = (codeFromPath || codeFromQuery).toUpperCase();
 
   // Back: to wherever they came from on this site, else to the group's page
-  const groupPage = code ? `/cg/${encodeURIComponent(code)}` : '/';
+  const groupPage = code ? `/group/${encodeURIComponent(code)}` : '/';
   document.getElementById('back').href = groupPage;
   document.getElementById('group-link').href = groupPage;
   if (code) document.getElementById('partners-link').href = `${groupPage}/partners`;
@@ -88,8 +88,8 @@
       form.hidden = true;
       document.getElementById('lead').hidden = true;
       document.getElementById('done-code').textContent = data.group.code;
-      document.getElementById('group-link').href = `/cg/${encodeURIComponent(data.group.code)}`;
-      document.getElementById('partners-link').href = `/cg/${encodeURIComponent(data.group.code)}/partners`;
+      document.getElementById('group-link').href = `/group/${encodeURIComponent(data.group.code)}`;
+      document.getElementById('partners-link').href = `/group/${encodeURIComponent(data.group.code)}/partners`;
       document.getElementById('done-name').textContent = data.group.groupName;
       document.getElementById('done').hidden = false;
     } catch (ex) {

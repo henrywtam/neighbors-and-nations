@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>Start Your CG — Neighbors &amp; Nations</title>
+  <title>Start Your Group — Neighbors &amp; Nations</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
@@ -16,16 +16,16 @@
 <script src="/assets/site-nav.js"></script>
 <main>
   <nav class="topnav">
-    <a href="/cg">← All CGs</a>
+    <a href="/group">← All groups</a>
   </nav>
   <div class="eyebrow">Neighbors &amp; Nations</div>
-  <h1>Start your CG</h1>
-  <p class="lead">Set up your group once. You'll get a code made from your CG's name to share with your group, and a page to put up on CG night. Not a CG? Any group can use this, like a staff or ministry team.</p>
+  <h1>Start your group</h1>
+  <p class="lead">Set up your group once. You'll get a code made from your group's name to share with everyone, and a page showing what your group has in common. Any group can use this: a community group, a staff or ministry team, a class.</p>
 
   <form id="start-form">
-    <label>CG name
+    <label>Group name
       <input name="groupName" placeholder="e.g. Sunset Young Adults" maxlength="80" autocomplete="off" required>
-      <span class="hint" id="name-check">Each CG name can only be used once.</span>
+      <span class="hint" id="name-check">Each group name can only be used once.</span>
     </label>
     <label>Your name
       <input name="leaderName" autocomplete="name" maxlength="80" required>
@@ -34,21 +34,21 @@
       <input name="leaderEmail" type="email" autocomplete="email" maxlength="254" required>
       <span class="hint">Use the email you used on the survey. Justice &amp; Outreach will follow up here.</span>
     </label>
-    <label>Neighborhood your CG meets in <span class="hint">(optional)</span>
+    <label>Neighborhood your group meets in <span class="hint">(optional)</span>
       <input name="neighborhood" list="nbhds" placeholder="e.g. Inner Sunset" maxlength="80">
       <datalist id="nbhds"></datalist>
     </label>
     <p class="error" id="error"></p>
-    <button type="submit">Create our CG</button>
+    <button type="submit">Create our group</button>
   </form>
 
   <div id="done" class="card" hidden>
-    <p>Your CG's code:</p>
+    <p>Your group's code:</p>
     <div class="big-code" id="code"></div>
-    <p>Share it with your group. On CG night, open your group's page: it shows QR codes for taking the survey and joining.</p>
-    <a class="button" id="screen-link">Open our CG page</a>
-    <a class="button secondary" id="partners-link">See partners that fit our CG</a>
-    <a class="button secondary" href="/cg">See all CGs</a>
+    <p>Share it with your group. Your group's page has QR codes for taking the survey and joining.</p>
+    <a class="button" id="screen-link">Open our group's page</a>
+    <a class="button secondary" id="partners-link">See partners that fit our group</a>
+    <a class="button secondary" href="/group">See all groups</a>
     <div class="link-row">Join link to share:<a id="join-link"></a></div>
   </div>
 </main>
@@ -70,7 +70,7 @@
   form.groupName.addEventListener('input', () => {
     clearTimeout(checkTimer);
     const name = form.groupName.value.trim();
-    if (!name) { check.textContent = 'Each CG name can only be used once.'; check.className = 'hint'; nameFree = true; return; }
+    if (!name) { check.textContent = 'Each group name can only be used once.'; check.className = 'hint'; nameFree = true; return; }
     checkTimer = setTimeout(async () => {
       try {
         const r = await fetch(`/api/groups/check?name=${encodeURIComponent(name)}`);
@@ -89,7 +89,7 @@
     e.preventDefault();
     const btn = form.querySelector('button');
     const err = document.getElementById('error');
-    if (!nameFree) { err.textContent = 'Please pick a CG name that isn\'t taken.'; return; }
+    if (!nameFree) { err.textContent = 'Please pick a group name that isn\'t taken.'; return; }
     btn.disabled = true;
     err.textContent = '';
     try {

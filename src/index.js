@@ -29,7 +29,7 @@ let currentState = null;
 
 /** @type {Set<import('express').Response>} */
 const sseClients = new Set();
-/** Community Group screens, by group code */
+/** Common Ground group screens, by group code */
 /** @type {Map<string, Set<import('express').Response>>} */
 const groupSseClients = new Map();
 
@@ -82,7 +82,7 @@ function pushSseEvent(data) {
 }
 
 // ---------------------------------------------------------------------------
-// Community Groups
+// Common Ground groups
 // ---------------------------------------------------------------------------
 
 /** Results for one group's roster, plus who has joined. */
@@ -100,7 +100,7 @@ function groupState(g) {
 }
 
 /**
- * Tiny in-memory rate limiter, per client IP. A CG night has a whole group on
+ * Tiny in-memory rate limiter, per client IP. A group meeting can put everyone on
  * one church wifi, so the join limit is generous; looking up codes that don't
  * exist is limited hard, so codes (and the emails behind them) can't be guessed.
  */
@@ -161,7 +161,7 @@ function baseUrl(req) {
 function groupLinks(req, code) {
   const base = baseUrl(req);
   return {
-    screen: `${base}/cg/${code}`,
+    screen: `${base}/group/${code}`,
     join: `${base}/join/${code}`,
   };
 }
@@ -313,15 +313,17 @@ app.get('/tv', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/tv/sf', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'world.html')));
 app.get('/status', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'status.html')));
 
-// Community Group pages
+// Common Ground group pages
 app.get('/start-group', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-start.html')));
 app.get(['/join', '/join/:code'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-join.html')));
-app.get('/cg', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-index.html')));
-app.get('/cg/:code', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg.html')));
-app.get(['/partners', '/cg/:code/partners'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'partners.html')));
+app.get('/group', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg-index.html')));
+app.get('/group/:code', (_req, res) => res.sendFile(join(PUBLIC_DIR, 'cg.html')));
+app.get(['/partners', '/group/:code/partners'], (_req, res) => res.sendFile(join(PUBLIC_DIR, 'partners.html')));
+// Old /cg links (shared before the Common Ground rename) keep working
+app.get(/^\/cg(\/.*)?$/, (req, res) => res.redirect(301, req.originalUrl.replace(/^\/cg/, '/group')));
 
 // ---------------------------------------------------------------------------
-// Community Group API
+// Common Ground group API
 // ---------------------------------------------------------------------------
 
 function requireGroups(_req, res, next) {
@@ -335,12 +337,12 @@ function sendError(res, err) {
   res.status(500).json({ error: 'Something went wrong saving that. Please try again.' });
 }
 
-// Every CG that's been set up, for the /cg page
+// Every group that's been set up, for the /group page
 app.get('/api/groups', requireGroups, (_req, res) => {
   res.json({ groups: groups.list().map(g => ({ ...publicGroup(g), memberCount: memberList(g).length })) });
 });
 
-// For the start form: is this CG name free, and what code would it get?
+// For the start form: is this group name free, and what code would it get?
 app.get('/api/groups/check', requireGroups, (req, res) => {
   res.json(groups.preview(String(req.query.name ?? '').slice(0, 200)));
 });
@@ -382,14 +384,14 @@ function demoState(code, joined) {
   return {
     type: 'state',
     ...serializeState({ ...state, isLive: true }),
-    group: g ? publicGroup(g) : { code: String(code).toUpperCase(), groupName: 'Sunset CG' },
+    group: g ? publicGroup(g) : { code: String(code).toUpperCase(), groupName: 'Sunset Group' },
     groupExists: !!g,
     members,
     demoTotal: DEMO_MEMBER_COUNT,
   };
 }
 
-// Demo mode for the CG page: the first ?joined= sample members
+// Demo mode for the group page: the first ?joined= sample members
 app.get('/api/groups/:code/demo', (req, res) => {
   if (!cache) return res.status(503).json({ error: 'State not yet available' });
   res.json(demoState(req.params.code, parseInt(req.query.joined) || 0));
@@ -429,7 +431,7 @@ app.get('/api/groups/:code/partners', missLimit.middleware, requirePartners, (re
   });
 });
 
-// QR codes on the CG page: 1 takes the survey, 2 joins the group
+// QR codes on the group page: 1 takes the survey, 2 joins the group
 const SURVEY_URL = `https://realitysf.churchcenter.com/people/forms/${FORM_ID}`;
 
 async function sendQr(res, url, cache) {
@@ -464,7 +466,7 @@ app.get('/api/events', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
-  // ?group=CODE: a Community Group screen, sent only that group's results
+  // ?group=CODE: a Common Ground group screen, sent only that group's results
   const g = req.query.group ? groups?.get(String(req.query.group)) : null;
   const clients = g
     ? (groupSseClients.get(g.code) ?? groupSseClients.set(g.code, new Set()).get(g.code))
@@ -553,9 +555,9 @@ async function start() {
   try {
     await store.init();
     groups = store;
-    console.log('[index] Community Groups loaded.');
+    console.log('[index] Common Ground groups loaded.');
   } catch (err) {
-    console.error('[index] Community Groups load failed (group pages disabled):', err.message);
+    console.error('[index] Common Ground groups load failed (group pages disabled):', err.message);
   }
 
   const partnerStore = createPartnerStore(sheetId);

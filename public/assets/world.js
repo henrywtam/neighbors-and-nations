@@ -376,12 +376,29 @@ function setupResizeObserver() {
     ro.observe(worldWrap);
   }
 
+  // The title is sized for Segoe UI (Windows); on Macs and others the fallback font runs
+  // wider, so shrink it until it clears the QR code
+  const header = document.getElementById('map-header');
+  if (header) {
+    new ResizeObserver(fitMapTitle).observe(header);
+    document.fonts?.ready.then(fitMapTitle);
+  }
+
   const sfWrap = document.getElementById('sf-map-wrap');
   if (sfWrap) {
     const ro = new ResizeObserver(() => {
       if (currentView === 'sf' && sfGeoData) initSfMap();
     });
     ro.observe(sfWrap);
+  }
+}
+
+function fitMapTitle() {
+  const el = document.getElementById('map-title');
+  if (!el) return;
+  el.style.fontSize = '';
+  if (el.scrollWidth > el.clientWidth) {
+    el.style.fontSize = `${Math.floor(parseFloat(getComputedStyle(el).fontSize) * el.clientWidth / el.scrollWidth * 0.97)}px`;
   }
 }
 
