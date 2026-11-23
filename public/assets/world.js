@@ -908,6 +908,15 @@ function renderVocationList(state, total) {
   renderRankedList(list, items, total, maxCount, prevCounts);
 }
 
+/**
+ * Rank shown for items[i] in a list sorted by count, descending. Ties share a
+ * rank and the next one skips ahead (1, 2, 2, 4).
+ */
+function tiedRank(items, i) {
+  while (i > 0 && (items[i - 1].count || 0) === (items[i].count || 0)) i--;
+  return i + 1;
+}
+
 function renderRankedList(container, items, total, maxCount, prevCounts = null) {
   // Record old positions for FLIP animation
   const oldPositions = new Map();
@@ -933,7 +942,7 @@ function renderRankedList(container, items, total, maxCount, prevCounts = null) 
     row.dataset.key = item.name;
 
     row.innerHTML = `
-      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-rank">${tiedRank(items, i)}</span>
       <span class="lb-name type-${item.type}">${escHtml(item.name)}</span>
       <span class="lb-meta">
         <span class="lb-count">${item.count}</span>
@@ -1042,8 +1051,8 @@ function renderOceanLeaderboards(state) {
     hEl.innerHTML = `
       <div class="hb-title">What's on our heart</div>
       <div class="hb-items">${items.map((item, i) => `
-        <div class="hb-item hb-item--r${i + 1}">
-          <span class="hb-rank"><svg viewBox="2 3 20 18.35" aria-hidden="true"><path d="${HEART_PATH}"/></svg><span>${i + 1}</span></span>
+        <div class="hb-item hb-item--r${tiedRank(items, i)}">
+          <span class="hb-rank"><svg viewBox="2 3 20 18.35" aria-hidden="true"><path d="${HEART_PATH}"/></svg><span>${tiedRank(items, i)}</span></span>
           <span class="hb-name">${escHtml(item.name)}</span>
         </div>`).join('')}
       </div>`;
@@ -1053,7 +1062,7 @@ function renderOceanLeaderboards(state) {
 function renderOceanCard(title, items) {
   const rows = items.map((item, i) => `
     <div class="ocean-lb-row">
-      <span class="ocean-lb-rank">${i + 1}</span>
+      <span class="ocean-lb-rank">${tiedRank(items, i)}</span>
       <span class="ocean-lb-name">${escHtml(item.name)}</span>
       <span class="ocean-lb-count">${item.count}</span>
     </div>`).join('');
@@ -1443,7 +1452,7 @@ function renderSfSidebar(state) {
       ? (prevCount === 0 ? 'lb-row--new' : item.count > prevCount ? 'lb-row--flash' : '')
       : '';
     return `<div class="lb-row${flashClass ? ' ' + flashClass : ''}">
-      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-rank">${tiedRank(items, i)}</span>
       <span class="lb-name">${escHtml(item.name)}</span>
       <span class="lb-meta"><span class="lb-count">${item.count}</span><span class="lb-pct">${pct}%</span></span>
       <div class="lb-bar-wrap"><div class="lb-bar" style="width:${barW}%"></div></div>
