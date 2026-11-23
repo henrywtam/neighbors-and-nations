@@ -221,11 +221,13 @@ html, body {
   gap: calc(0.5 * var(--u));
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   mask-image: linear-gradient(180deg, #000 calc(100% - 40px), transparent);
   font-size: clamp(14px, calc(1.05 * var(--u)), 24px);
 }
-#who-list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* flex-shrink: 0 keeps each row full height; without it long lists squash rows and clip the text */
+#who-list li { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 #who-list li.empty { white-space: normal; color: var(--muted); }
 #who-list li.fresh { animation: fresh 1.6s ease-out; }

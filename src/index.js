@@ -49,8 +49,10 @@ let lastCheckedAt = null;
 // SSE helpers
 // ---------------------------------------------------------------------------
 
-function serializeState(state) {
-  if (!state) return null;
+function serializeState(fullState) {
+  if (!fullState) return null;
+  // countedEmailKeys is server-only: used to filter group rosters, never sent to browsers
+  const { countedEmailKeys: _server, ...state } = fullState;
   return {
     ...state,
     countryPicks: Object.fromEntries(state.countryPicks),
@@ -89,8 +91,11 @@ function pushSseEvent(data) {
 function groupState(g) {
   const info = publicGroup(g);
   const state = processResponses(cache.sheetData(), config, geonames, { emailKeys: groups.memberKeys(g.code) });
-  // Who has joined, newest first; emails are masked here so full addresses never leave the server
-  const roster = memberList(g).map(m => ({ email: maskEmail(m.email) }));
+  // Who has joined and has survey results counted on this page, newest first;
+  // emails are masked here so full addresses never leave the server
+  const roster = memberList(g)
+    .filter(m => m.keys.some(k => state.countedEmailKeys.has(k)))
+    .map(m => ({ email: maskEmail(m.email) }));
   return {
     type: 'state',
     ...serializeState({ ...state, isLive: sheetsHealthy }),

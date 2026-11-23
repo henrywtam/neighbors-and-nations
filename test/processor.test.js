@@ -355,3 +355,13 @@ test('regionReach counts each person once per region, from region picks and coun
   const state = processResponses(data, defaultConfig, mockGeonames);
   assert.equal(state.regionReach.get('East & Southeast Asia'), 2);
 });
+
+// countedEmailKeys: the people behind totalPeople (group pages list only these)
+test('countedEmailKeys lists exactly the people counted in totalPeople', () => {
+  const counted = makeRow({ person_id: 'p1', email_key: 'aaaa' });
+  const testRow = makeRow({ person_id: 'p2', email_key: 'bbbb', is_test: 'TRUE' });
+  const sheetData = makeSheetData({ responses: [counted, testRow] });
+  const state = processResponses(sheetData, { showTestRows: false }, mockGeonames);
+  assert.equal(state.totalPeople, 1);
+  assert.deepEqual([...state.countedEmailKeys], ['aaaa']);
+});

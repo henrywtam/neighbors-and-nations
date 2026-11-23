@@ -136,6 +136,8 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
   const unmatchedCities = new Map();    // key = `city|country` → {city, country}
   let invalidRowCount = 0;
   let totalPeople = 0;
+  // email_keys of the people counted in totalPeople (lets a group list only members with results)
+  const countedEmailKeys = new Set();
 
   for (const [pid, row] of byPerson) {
     // -----------------------------------------------------------------------
@@ -161,6 +163,7 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
     }
 
     totalPeople++;
+    if (pid.startsWith('email:')) countedEmailKeys.add(pid.slice('email:'.length));
 
     // -----------------------------------------------------------------------
     // Collect all connect place values for this person
@@ -361,6 +364,7 @@ export function processResponses(sheetData, config, geonames, { emailKeys = null
 
   return {
     totalPeople,
+    countedEmailKeys,
     countryPicks,
     regionPicks,
     regionReach,
