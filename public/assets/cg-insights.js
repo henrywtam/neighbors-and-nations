@@ -349,10 +349,14 @@ function renderMap(state) {
   const path = d3.geoPath(projection);
 
   const svg = d3.create('svg').attr('width', W).attr('height', H);
+  // Tapping open map (not a lit place) closes the label
+  svg.on('click', () => hideMapTip());
   svg.append('g').selectAll('path').data(mapFeatures).join('path')
     .attr('class', f => 'country-path' + (countryPicks[countryOf(f)] ? ' lit' : ''))
     .attr('d', path)
-    .attr('fill', f => countryFill(countryPicks[countryOf(f)], maxCountry));
+    .attr('fill', f => countryFill(countryPicks[countryOf(f)], maxCountry))
+    .filter(f => countryPicks[countryOf(f)])
+    .call(sel => labelOnPoint(sel, f => countryOf(f), f => countryPicks[countryOf(f)], 'country'));
 
   // Lit countries too small to see get a marker on their largest shape
   const largest = new Map();
@@ -366,7 +370,10 @@ function renderMap(state) {
   for (const { f, area } of largest.values()) {
     if (area >= TINY_COUNTRY_AREA_PX) continue;
     const [cx, cy] = path.centroid(f);
-    if (!isNaN(cx)) markers.append('circle').attr('class', 'country-marker').attr('cx', cx).attr('cy', cy).attr('r', 3.5);
+    if (isNaN(cx)) continue;
+    const name = countryOf(f);
+    markers.append('circle').attr('class', 'country-marker').attr('cx', cx).attr('cy', cy).attr('r', 3.5)
+      .call(sel => labelOnPoint(sel, () => name, () => countryPicks[name], 'country'));
   }
 
   // City dots: ~3px to ~7px on a 1440px-wide map, scaled with the map
@@ -378,8 +385,54 @@ function renderMap(state) {
     .attr('class', 'city-dot')
     .attr('cx', c => projection([c.lng, c.lat])[0])
     .attr('cy', c => projection([c.lng, c.lat])[1])
-    .attr('r', c => Math.sqrt((minArea + (maxArea - minArea) * (c.count / maxCity)) / Math.PI));
-  el.replaceChildren(svg.node());
+    .attr('r', c => Math.sqrt((minArea + (maxArea - minArea) * (c.count / maxCity)) / Math.PI))
+    .call(sel => labelOnPoint(sel, c => c.name, c => c.count, 'city'));
+
+  // The label lives beside the SVG so redraws (new answers, resizes) don't orphan it
+  hideMapTip();
+  el.replaceChildren(svg.node(), mapTip());
+}
+
+// ---------------------------------------------------------------------------
+// Map labels: hover (mouse) or tap (touch) a lit country, marker, or city dot
+// to see its name and how many of the group are connected to it.
+// ---------------------------------------------------------------------------
+let mapTipEl = null;
+function mapTip() {
+  if (!mapTipEl) {
+    mapTipEl = document.createElement('div');
+    mapTipEl.id = 'map-tip';
+    mapTipEl.setAttribute('role', 'status');
+  }
+  return mapTipEl;
+}
+
+function labelOnPoint(sel, nameOf, countOf, type) {
+  sel.classed('labelled', true)
+    .on('pointerenter pointermove', (event, d) => { if (event.pointerType === 'mouse') showMapTip(event, nameOf(d), countOf(d), type); })
+    .on('pointerleave', event => { if (event.pointerType === 'mouse') hideMapTip(); })
+    .on('click', (event, d) => { event.stopPropagation(); showMapTip(event, nameOf(d), countOf(d), type); });
+}
+
+function showMapTip(event, name, count, type) {
+  const tip = mapTip();
+  const wrap = document.getElementById('map');
+  if (!wrap || !name) return;
+  tip.className = `visible type-${type}`;
+  tip.innerHTML = `<div class="mt-name">${esc(name)}</div>
+    <div class="mt-count"><b>${count}</b> ${count === 1 ? 'person' : 'people'}</div>`;
+  // Beside the pointer, flipped to the other side near the right/bottom edges
+  const rect = wrap.getBoundingClientRect();
+  const x = event.clientX - rect.left, y = event.clientY - rect.top, margin = 14;
+  let left = x + margin, top = y + margin;
+  if (left + tip.offsetWidth > rect.width - 8) left = x - tip.offsetWidth - margin;
+  if (top + tip.offsetHeight > rect.height - 8) top = y - tip.offsetHeight - margin;
+  tip.style.left = `${Math.max(4, left)}px`;
+  tip.style.top = `${Math.max(4, top)}px`;
+}
+
+function hideMapTip() {
+  if (mapTipEl) mapTipEl.className = '';
 }
 
 /** Running list of who has joined, newest first; new arrivals fade in. */
