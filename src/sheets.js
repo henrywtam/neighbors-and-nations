@@ -43,23 +43,43 @@ function client(credentials, readonly) {
  */
 export async function appendRows(sheetId, tab, rows, credentials = null) {
   if (rows.length === 0) return { updatedRows: 0 };
+  return writeAfterLastRow(client(credentials, false), sheetId, tab, rows, 'USER_ENTERED');
+}
 
-  const sheets = client(credentials, false);
+/**
+ * Write rows starting in column A of the first row after the last row with any
+ * value (any column, so a row with a blank column A is never overwritten).
+ * values.append is not used: it lets Sheets guess "the table"
+ * to append to, and a blank row or stray cells make it guess wrong, landing new
+ * rows shifted right (e.g. starting at column L), where the app can't read them.
+ *
+ * @returns {Promise<{updatedRows: number, lastRow: number}>}
+ */
+async function writeAfterLastRow(sheets, sheetId, tab, rows, valueInputOption) {
+  // The returned range starts at A1 and stops at the last row with any value
+  const used = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: tab });
+  const start = (used.data.values?.length ?? 0) + 1;
+  const end = start + rows.length - 1;
 
-  const res = await sheets.spreadsheets.values.append({
+  // values.update can't write past the grid, so add rows first if needed
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetId, fields: 'sheets.properties' });
+  const props = meta.data.sheets.find(s => s.properties.title === tab)?.properties;
+  if (!props) throw new Error(`Tab not found: ${tab}`);
+  const gridRows = props.gridProperties?.rowCount ?? 0;
+  if (end > gridRows) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: { requests: [{ appendDimension: { sheetId: props.sheetId, dimension: 'ROWS', length: end - gridRows } }] },
+    });
+  }
+
+  await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
-    range: tab,
-    valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
+    range: `${tab}!A${start}`,
+    valueInputOption,
     requestBody: { values: rows },
   });
-
-  const range = res.data.updates?.updatedRange ?? '';
-  const m = range.match(/(\d+)$/);
-  return {
-    updatedRows: res.data.updates?.updatedRows ?? rows.length,
-    lastRow: m ? parseInt(m[1]) : null,
-  };
+  return { updatedRows: rows.length, lastRow: end };
 }
 
 // ---------------------------------------------------------------------------
@@ -97,13 +117,7 @@ export async function writeUnmatched(sheetId, items, credentials = null) {
 
   if (newRows.length === 0) return { added: 0 };
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: sheetId,
-    range: 'Unmatched',
-    valueInputOption: 'RAW',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: { values: newRows },
-  });
+  await writeAfterLastRow(sheets, sheetId, 'Unmatched', newRows, 'RAW');
 
   return { added: newRows.length };
 }
@@ -454,11 +468,5 @@ function writeTabHeader(sheets, sheetId, tab, header) {
 export async function appendRowsRaw(sheetId, tab, rows, credentials = null) {
   if (rows.length === 0) return;
   const sheets = client(credentials, false);
-  await withRetry(`${tab} append`, () => sheets.spreadsheets.values.append({
-    spreadsheetId: sheetId,
-    range: tab,
-    valueInputOption: 'RAW',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: { values: rows },
-  }));
+  await withRetry(`${tab} append`, () => writeAfterLastRow(sheets, sheetId, tab, rows, 'RAW'));
 }
